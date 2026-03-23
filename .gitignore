@@ -1,0 +1,48 @@
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docview
+
+# Build 결과물
+bin/
+obj/
+out/
+
+# NuGet
+*.nupkg
+packages/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# .NET
+*.dll
+*.exe
+*.pdb
+*.cache
+
+# tessdata (용량 큰 파일)
+**/tessdata/*.traineddata
+
+# SQLite DB 파일 (로컬 데이터)
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+
+# 엑셀 임시파일
+~$*.xlsx
+
+# 로그
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# temp 폴더
+temp/
+tmp/
