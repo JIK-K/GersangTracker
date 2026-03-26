@@ -1,0 +1,198 @@
+﻿<Window x:Class="GersangTracker.Views.HuntingWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="사냥 중" Height="500" Width="500"
+        Background="#222831"
+        WindowStartupLocation="CenterScreen">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="60"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="120"/>
+            <RowDefinition Height="55"/>
+        </Grid.RowDefinitions>
+
+        <!-- 상단 헤더 -->
+        <Border Grid.Row="0" Background="#393E46">
+            <Grid Margin="16,0">
+                <TextBlock Text="{Binding CurrentMonster.Name}"
+                           Foreground="White"
+                           FontSize="16"
+                           FontWeight="Bold"
+                           VerticalAlignment="Center"/>
+                <StackPanel HorizontalAlignment="Right"
+                            VerticalAlignment="Center">
+                    <TextBlock Text="경과 시간"
+                               Foreground="#EEEEEE"
+                               Opacity="0.6"
+                               FontSize="10"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock Text="{Binding ElapsedTime}"
+                               Foreground="#00ADB5"
+                               FontSize="18"
+                               FontWeight="Bold"
+                               HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- 드랍 로그 -->
+        <Border Grid.Row="1" Background="#393E46" Margin="12,8,12,4" CornerRadius="6">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="35"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- 드랍 로그 헤더 -->
+                <Border Grid.Row="0" Background="#2D3139" CornerRadius="6,6,0,0">
+                    <TextBlock Text="드랍 로그"
+                               Foreground="#EEEEEE"
+                               FontSize="12"
+                               FontWeight="Bold"
+                               VerticalAlignment="Center"
+                               Margin="12,0"/>
+                </Border>
+
+                <!-- 드랍 로그 목록 -->
+                <ScrollViewer Grid.Row="1" Margin="8,4">
+                    <ItemsControl ItemsSource="{Binding DropLogs}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="4,3">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="65"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="45"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBlock Grid.Column="0"
+                                               Text="{Binding DroppedAt, StringFormat=HH:mm:ss}"
+                                               Foreground="#EEEEEE"
+                                               Opacity="0.6"
+                                               FontSize="10"
+                                               VerticalAlignment="Center"/>
+
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding ItemName}"
+                                               Foreground="White"
+                                               FontSize="11"
+                                               VerticalAlignment="Center"/>
+
+                                    <TextBlock Grid.Column="2"
+                                               Foreground="#00ADB5"
+                                               FontSize="11"
+                                               VerticalAlignment="Center"
+                                               HorizontalAlignment="Right">
+                                        <Run Text="x"/>
+                                        <Run Text="{Binding Quantity}"/>
+                                    </TextBlock>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+
+                <!-- 상태 로그 -->
+                <Border Grid.Row="2" Background="#2D3139" CornerRadius="0,0,6,6">
+                    <ScrollViewer MaxHeight="150" Margin="8,4">
+                        <ItemsControl ItemsSource="{Binding StatusLogs}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBox Text="{Binding Mode=OneWay}"
+                                         Foreground="#EEEEEE"
+                                         Background="Transparent"
+                                         BorderThickness="0"
+                                         IsReadOnly="True"
+                                         FontSize="10"
+                                         Margin="0,1"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- 아이템 합산 -->
+        <Border Grid.Row="2" Background="#393E46" Margin="12,4,12,8" CornerRadius="6">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="35"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- 합산 헤더 -->
+                <Border Grid.Row="0" Background="#2D3139" CornerRadius="6,6,0,0">
+                    <TextBlock Text="아이템 합산"
+                               Foreground="#EEEEEE"
+                               FontSize="12"
+                               FontWeight="Bold"
+                               VerticalAlignment="Center"
+                               Margin="12,0"/>
+                </Border>
+
+                <!-- 합산 목록 -->
+                <ScrollViewer Grid.Row="1" Margin="8,4">
+                    <ItemsControl ItemsSource="{Binding ItemSummaries}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="#2D3139"
+                                        CornerRadius="4"
+                                        Padding="8,4"
+                                        Margin="4,3">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding ItemName}"
+                                                   Foreground="White"
+                                                   FontSize="11"
+                                                   VerticalAlignment="Center"/>
+                                        <TextBlock Foreground="#00ADB5"
+                                                   FontSize="11"
+                                                   Margin="6,0,0,0"
+                                                   VerticalAlignment="Center">
+                                            <Run Text="x"/>
+                                            <Run Text="{Binding TotalQuantity}"/>
+                                        </TextBlock>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Grid>
+        </Border>
+
+        <!-- 사냥 종료 버튼 -->
+        <Border Grid.Row="3" Background="#393E46">
+            <Button Content="사냥 종료"
+                    Width="160"
+                    Height="34"
+                    Background="#C0392B"
+                    Foreground="White"
+                    BorderThickness="0"
+                    Cursor="Hand"
+                    FontSize="13"
+                    FontWeight="Bold"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Click="StopHunting_Click">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+        </Border>
+    </Grid>
+</Window>

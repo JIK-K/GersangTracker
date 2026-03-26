@@ -17,6 +17,11 @@ namespace GersangTracker.Services
         public async Task AddMonsterAsync(string name)
         {
             using var db = new AppDbContext();
+            var isExist = await db.Monsters.AnyAsync(m => m.Name == name);
+            if (isExist)
+            {
+                throw new InvalidOperationException("이미 존재하는 몬스터 이름입니다.");
+            }
             db.Monsters.Add(new Monster { Name = name });
             await db.SaveChangesAsync();
         }

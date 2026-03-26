@@ -11,7 +11,8 @@ namespace GersangTracker.Services
         public ExcelService()
         {
             // 비상업용 라이선스 설정
-            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+            ExcelPackage.License.SetNonCommercialPersonal("GersangTracker");
+
         }
 
         public void Export(Session session, Monster monster, List<DropLog> dropLogs, string filePath)

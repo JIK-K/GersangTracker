@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using GersangTracker.ViewModels;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -9,7 +10,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace GersangTracker
+namespace GersangTracker.Views
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
@@ -19,6 +20,13 @@ namespace GersangTracker
         public MainWindow()
         {
             InitializeComponent();
+            Loaded += async (s, e) =>
+            {
+                if (DataContext is MainViewModel vm)
+                {
+                    await vm.LoadMonstersCommand.ExecuteAsync(null);
+                }
+            };
         }
     }
 }

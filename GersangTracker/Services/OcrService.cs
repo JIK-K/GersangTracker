@@ -2,15 +2,15 @@
 using OpenCvSharp.Extensions;
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.IO;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text.RegularExpressions;
 using System.Timers;
-using Tesseract;
+using Windows.Graphics.Imaging;
+using Windows.Media.Ocr;
 
 namespace GersangTracker.Services
 {
-
     public class DroppedItemEventArgs : EventArgs
     {
         public string ItemName { get; set; } = string.Empty;
@@ -38,23 +38,26 @@ namespace GersangTracker.Services
         static extern int ReleaseDC(IntPtr hWnd, IntPtr hDC);
 
         // 실제 화면을 캡처하는 API
-        // hdcDest: 저장할 곳, hdcSrc: 캡처할 창, dwRop: 복사 방식 (0x00CC0020 = 그대로 복사)
         [DllImport("gdi32.dll")]
         static extern bool BitBlt(IntPtr hdcDest, int nXDest, int nYDest,
             int nWidth, int nHeight, IntPtr hdcSrc, int nXSrc, int nYSrc, uint dwRop);
 
         // Windows API가 창 영역을 반환할 때 사용하는 구조체
-        // StructLayout: C#과 Windows API의 메모리 구조를 맞추기 위한 설정
         [StructLayout(LayoutKind.Sequential)]
         struct RECT { public int Left, Top, Right, Bottom; }
         #endregion
 
-        // 새 아이템 드랍 감지시 외부(HuntingViewModel)에 알려주는 이벤트
-        // ? 는 구독자가 없을 때 null 허용
+        // 새 아이템 드랍 감지시 외부에 알려주는 이벤트
         public event EventHandler<DroppedItemEventArgs>? ItemDropped;
 
-        // [닉네임]님이 [아이템명] N개를 획득하였습니다 패턴 파싱
-        private readonly Regex _dropRegex = new(@"\[(.+?)\]님이 \[(.+?)\] (\d+)개를 획득하였습니다");
+        // 거상 창 감지 상태 변경시 알림
+        public event EventHandler<bool>? WindowDetected;
+
+        // OCR 텍스트 인식 결과 알림 (디버그용)
+        public event EventHandler<string>? TextRecognized;
+
+        // 정규식 - [닉네임]님이 [아이템명] N개를 획득하였습니다
+        private readonly Regex _dropRegex = new(@"\[(.+?)\]님.{1,2}\[(.+?)\]\s*(\d+)\s*개를\s*획득하였습니다\.?");
 
         // 이전 캡처 줄 목록 - 신규 드랍 판별에 사용
         private List<string> _prevLines = new();
@@ -62,47 +65,66 @@ namespace GersangTracker.Services
         // 1초마다 캡처를 실행하는 타이머
         private readonly System.Timers.Timer _timer;
 
-        // Tesseract 언어 데이터 경로
-        private readonly string _tessPath;
+        // Windows OCR 엔진 - 한국어
+        private readonly OcrEngine _ocrEngine;
 
-        // 캡처 영역 설정 (게임 창 기준 좌표)
-        private readonly int _startX = 0;       // 캡처 시작 X
-        private readonly int _startY = 0;       // 캡처 시작 Y
-        private readonly int _cropWidth = 400;  // 캡처 너비
-        private readonly int _cropHeight = 200; // 캡처 높이
+        // 캡처 영역 설정
+        private readonly int _startX = 0;
+        private readonly int _startY = 55;
+        private readonly int _cropWidth = 400;
+        private readonly int _cropHeight = 200;
+
+        // 거상 창 감지 상태
+        private bool _wasWindowFound = false;
 
         public OcrService()
         {
-            // Assets/tessdata 폴더 경로 설정
-            _tessPath = Path.Combine(
-                AppDomain.CurrentDomain.BaseDirectory,
-                "Assets", "tessdata");
+            // Windows OCR 한국어 엔진 초기화
+            var language = new Windows.Globalization.Language("ko");
+            _ocrEngine = OcrEngine.TryCreateFromLanguage(language)
+                ?? OcrEngine.TryCreateFromUserProfileLanguages()
+                ?? throw new Exception("한국어 OCR 엔진을 초기화할 수 없습니다. 한국어 언어팩을 설치해주세요.");
 
             // 1초 타이머 설정
             _timer = new System.Timers.Timer(1000);
             _timer.Elapsed += OnTimerElapsed;
         }
 
+        // 사냥 시작 - 타이머 시작
         public void Start()
         {
             _prevLines.Clear();
             _timer.Start();
         }
 
-
+        // 사냥 종료 - 타이머 정지
         public void Stop()
         {
             _timer.Stop();
             _prevLines.Clear();
         }
 
-
-        private void OnTimerElapsed(object? sender, ElapsedEventArgs e)
+        // 1초마다 실행되는 캡처 로직
+        private async void OnTimerElapsed(object? sender, ElapsedEventArgs e)
         {
             try
             {
                 // 1. 거상 창 찾기
                 IntPtr hwnd = FindWindow(null!, "Gersang");
+
+                // 창 감지 상태 변경시에만 이벤트 발생
+                if (hwnd == IntPtr.Zero && _wasWindowFound)
+                {
+                    _wasWindowFound = false;
+                    WindowDetected?.Invoke(this, false);
+                    return;
+                }
+                else if (hwnd != IntPtr.Zero && !_wasWindowFound)
+                {
+                    _wasWindowFound = true;
+                    WindowDetected?.Invoke(this, true);
+                }
+
                 if (hwnd == IntPtr.Zero) return;
 
                 // 2. 창 크기 가져오기
@@ -117,21 +139,29 @@ namespace GersangTracker.Services
                 Rectangle cropRect = new(_startX, _startY, _cropWidth, _cropHeight);
                 Bitmap cropped = fullCapture.Clone(cropRect, fullCapture.PixelFormat);
 
-                // 5. 전처리 - 그레이스케일 → 이진화 (OCR 정확도 향상)
-                Mat mat = BitmapConverter.ToMat(cropped);
-                Mat gray = new();
-                Mat binary = new();
-                Cv2.CvtColor(mat, gray, ColorConversionCodes.BGR2GRAY);
-                Cv2.Threshold(gray, binary, 180, 255, ThresholdTypes.Binary);
-                Bitmap processed = BitmapConverter.ToBitmap(binary);
+                // 이미지 2배 확대
+                Bitmap enlarged = new Bitmap(cropped.Width * 2, cropped.Height * 2);
+                using (Graphics g = Graphics.FromImage(enlarged))
+                {
+                    g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                    g.DrawImage(cropped, 0, 0, enlarged.Width, enlarged.Height);
+                }
 
-                // 6. Tesseract OCR 실행
-                using var engine = new TesseractEngine(_tessPath, "kor", EngineMode.Default);
-                using var img = Pix.LoadTiffFromMemory(Array.Empty<byte>());
-                using var page = engine.Process(img);
-                string text = page.GetText().Trim();
+                // @Debug - 캡처 이미지 저장
+                enlarged.Save(@"C:\temp\hunting_crop.png");
 
-                // 7. 줄 단위로 분리 후 공백 제거
+                // 5. Bitmap → SoftwareBitmap 변환 (Windows OCR용)
+                SoftwareBitmap softwareBitmap = BitmapToSoftwareBitmap(enlarged);
+
+                // 6. Windows OCR 실행
+                OcrResult result = await _ocrEngine.RecognizeAsync(softwareBitmap);
+                string text = string.Join("\n", result.Lines.Select(l => l.Text));
+
+                // @Debug
+                if (!string.IsNullOrWhiteSpace(text))
+                    TextRecognized?.Invoke(this, text);
+
+                // 7. 줄 단위로 분리
                 List<string> currentLines = text
                     .Split('\n')
                     .Select(l => l.Trim())
@@ -147,7 +177,6 @@ namespace GersangTracker.Services
                     var match = _dropRegex.Match(line);
                     if (match.Success)
                     {
-                        // ItemDropped 이벤트 발생 - 구독자(HuntingViewModel)에게 알림
                         ItemDropped?.Invoke(this, new DroppedItemEventArgs
                         {
                             ItemName = match.Groups[2].Value,
@@ -163,22 +192,49 @@ namespace GersangTracker.Services
                 // 11. 리소스 해제
                 fullCapture.Dispose();
                 cropped.Dispose();
-                processed.Dispose();
+                enlarged.Dispose();
+                softwareBitmap.Dispose();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                TextRecognized?.Invoke(this, $"오류: {ex.Message}");
+            }
         }
 
+        // Bitmap → SoftwareBitmap 변환
+        private SoftwareBitmap BitmapToSoftwareBitmap(Bitmap bitmap)
+        {
+            // Bitmap을 BGRA8 포맷으로 변환
+            Bitmap bmp = new(bitmap.Width, bitmap.Height, PixelFormat.Format32bppArgb);
+            using (Graphics g = Graphics.FromImage(bmp))
+                g.DrawImage(bitmap, 0, 0);
 
+            BitmapData data = bmp.LockBits(
+                new Rectangle(0, 0, bmp.Width, bmp.Height),
+                ImageLockMode.ReadOnly,
+                PixelFormat.Format32bppArgb);
 
+            byte[] bytes = new byte[data.Stride * data.Height];
+            Marshal.Copy(data.Scan0, bytes, 0, bytes.Length);
+            bmp.UnlockBits(data);
+
+            SoftwareBitmap softwareBitmap = new(
+                BitmapPixelFormat.Bgra8,
+                bmp.Width,
+                bmp.Height,
+                BitmapAlphaMode.Premultiplied);
+
+            softwareBitmap.CopyFromBuffer(bytes.AsBuffer());
+
+            return softwareBitmap;
+        }
+
+        // 신규 줄 판별 로직
         private List<string> GetNewLines(List<string> prev, List<string> current)
         {
-            // 현재 캡처가 비어있으면 신규 없음
             if (current.Count == 0) return new();
-
-            // 이전 캡처가 비어있으면 현재 전체가 신규
             if (prev.Count == 0) return new(current);
 
-            // 이전 첫줄이 현재 몇번째 인덱스에 있는지 찾기
             int matchIndex = -1;
             for (int i = 0; i < current.Count; i++)
             {
@@ -189,13 +245,11 @@ namespace GersangTracker.Services
                 }
             }
 
-            // 이전 첫줄이 현재에 없으면 현재 전체가 신규
             if (matchIndex == -1) return new(current);
-
-            // 매칭된 인덱스 위의 줄들만 신규
             return current.Take(matchIndex).ToList();
         }
 
+        // BitBlt 방식으로 게임 창 캡처
         private Bitmap CaptureWindow(IntPtr hwnd, int width, int height)
         {
             IntPtr hdcSrc = GetDC(hwnd);
@@ -207,7 +261,6 @@ namespace GersangTracker.Services
             ReleaseDC(hwnd, hdcSrc);
             return bitmap;
         }
-
 
         public void Dispose()
         {
