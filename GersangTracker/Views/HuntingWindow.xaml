@@ -97,7 +97,7 @@
 
                 <!-- 상태 로그 -->
                 <Border Grid.Row="2" Background="#2D3139" CornerRadius="0,0,6,6">
-                    <ScrollViewer MaxHeight="150" Margin="8,4">
+                    <ScrollViewer MaxHeight="50" Margin="8,4">
                         <ItemsControl ItemsSource="{Binding StatusLogs}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>

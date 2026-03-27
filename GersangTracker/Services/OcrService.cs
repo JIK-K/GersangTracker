@@ -2,12 +2,12 @@
 using OpenCvSharp.Extensions;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.IO;
 using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.WindowsRuntime;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Timers;
-using Windows.Graphics.Imaging;
-using Windows.Media.Ocr;
+using Tesseract;
 
 namespace GersangTracker.Services
 {
@@ -20,6 +20,10 @@ namespace GersangTracker.Services
 
     public class OcrService : IDisposable
     {
+        // @Debug
+        private readonly string _logDirectory = @"C:\temp";
+        private readonly string _logFileName = "ocr_logs.txt";
+
         #region Windows API
         // 창 제목으로 게임 창 핸들(고유 ID)을 찾아오는 API
         [DllImport("user32.dll")]
@@ -29,11 +33,11 @@ namespace GersangTracker.Services
         [DllImport("user32.dll")]
         static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
 
-        // 창의 그래픽 컨텍스트(DC)를 가져오는 API - 캡처 준비 단계
+        // 창의 그래픽 컨텍스트(DC)를 가져오는 API
         [DllImport("user32.dll")]
         static extern IntPtr GetDC(IntPtr hWnd);
 
-        // 가져온 그래픽 컨텍스트(DC)를 해제하는 API - 캡처 후 반드시 호출
+        // 그래픽 컨텍스트(DC)를 해제하는 API
         [DllImport("user32.dll")]
         static extern int ReleaseDC(IntPtr hWnd, IntPtr hDC);
 
@@ -57,7 +61,9 @@ namespace GersangTracker.Services
         public event EventHandler<string>? TextRecognized;
 
         // 정규식 - [닉네임]님이 [아이템명] N개를 획득하였습니다
-        private readonly Regex _dropRegex = new(@"\[(.+?)\]님.{1,2}\[(.+?)\]\s*(\d+)\s*개를\s*획득하였습니다\.?");
+        //private readonly Regex _dropRegex = new(@"\[(.+?)\]님.{1,3}\[(.+?)\]\s*(\d+)\s*개를\s*획득하");
+        //private readonly Regex _dropRegex = new(@"\[.+?\][^\[]*\[([가-힣\s]+)\]\s*(\d+)");
+        private readonly Regex _dropRegex = new(@"\[.+?\].*?\[([^\]]+)\]");
 
         // 이전 캡처 줄 목록 - 신규 드랍 판별에 사용
         private List<string> _prevLines = new();
@@ -65,8 +71,8 @@ namespace GersangTracker.Services
         // 1초마다 캡처를 실행하는 타이머
         private readonly System.Timers.Timer _timer;
 
-        // Windows OCR 엔진 - 한국어
-        private readonly OcrEngine _ocrEngine;
+        // Tesseract 언어 데이터 경로
+        private readonly string _tessPath;
 
         // 캡처 영역 설정
         private readonly int _startX = 0;
@@ -79,13 +85,10 @@ namespace GersangTracker.Services
 
         public OcrService()
         {
-            // Windows OCR 한국어 엔진 초기화
-            var language = new Windows.Globalization.Language("ko");
-            _ocrEngine = OcrEngine.TryCreateFromLanguage(language)
-                ?? OcrEngine.TryCreateFromUserProfileLanguages()
-                ?? throw new Exception("한국어 OCR 엔진을 초기화할 수 없습니다. 한국어 언어팩을 설치해주세요.");
+            _tessPath = Path.Combine(
+                AppDomain.CurrentDomain.BaseDirectory,
+                "Assets", "tessdata");
 
-            // 1초 타이머 설정
             _timer = new System.Timers.Timer(1000);
             _timer.Elapsed += OnTimerElapsed;
         }
@@ -105,14 +108,13 @@ namespace GersangTracker.Services
         }
 
         // 1초마다 실행되는 캡처 로직
-        private async void OnTimerElapsed(object? sender, ElapsedEventArgs e)
+        private void OnTimerElapsed(object? sender, ElapsedEventArgs e)
         {
             try
             {
                 // 1. 거상 창 찾기
                 IntPtr hwnd = FindWindow(null!, "Gersang");
 
-                // 창 감지 상태 변경시에만 이벤트 발생
                 if (hwnd == IntPtr.Zero && _wasWindowFound)
                 {
                     _wasWindowFound = false;
@@ -139,7 +141,7 @@ namespace GersangTracker.Services
                 Rectangle cropRect = new(_startX, _startY, _cropWidth, _cropHeight);
                 Bitmap cropped = fullCapture.Clone(cropRect, fullCapture.PixelFormat);
 
-                // 이미지 2배 확대
+                // 5. 이미지 2배 확대
                 Bitmap enlarged = new Bitmap(cropped.Width * 2, cropped.Height * 2);
                 using (Graphics g = Graphics.FromImage(enlarged))
                 {
@@ -147,86 +149,95 @@ namespace GersangTracker.Services
                     g.DrawImage(cropped, 0, 0, enlarged.Width, enlarged.Height);
                 }
 
-                // @Debug - 캡처 이미지 저장
-                enlarged.Save(@"C:\temp\hunting_crop.png");
+                // 6. 전처리 - 그레이스케일 → 이진화
+                Mat mat = BitmapConverter.ToMat(enlarged);
+                Mat gray = new();
+                Mat binary = new();
+                Cv2.CvtColor(mat, gray, ColorConversionCodes.BGR2GRAY);
+                Cv2.Threshold(gray, binary, 180, 255, ThresholdTypes.Binary);
+                Bitmap processed = BitmapConverter.ToBitmap(binary);
 
-                // 5. Bitmap → SoftwareBitmap 변환 (Windows OCR용)
-                SoftwareBitmap softwareBitmap = BitmapToSoftwareBitmap(enlarged);
+                // 7. Tesseract OCR 실행
+                string tempPath = Path.Combine(Path.GetTempPath(), "ocr_temp.png");
+                processed.Save(tempPath);
 
-                // 6. Windows OCR 실행
-                OcrResult result = await _ocrEngine.RecognizeAsync(softwareBitmap);
-                string text = string.Join("\n", result.Lines.Select(l => l.Text));
+                using var engine = new TesseractEngine(_tessPath, "kor", EngineMode.Default);
+                using var img = Pix.LoadFromFile(tempPath);
+                using var page = engine.Process(img);
+                string text = page.GetText().Trim();
+
+                // 글자 사이 공백 제거
+                text = Regex.Replace(text, @"(?<=\S) (?=\S)", "");
+                text = text.Replace("{", "[").Replace("}", "]")
+                           .Replace("(", "[").Replace(")", "]")
+                           .Replace("【", "[").Replace("】", "]")
+                           .Replace("〔", "[").Replace("〕", "]")
+                           .Replace("「", "[").Replace("」", "]");
 
                 // @Debug
                 if (!string.IsNullOrWhiteSpace(text))
+                {
+                    SaveTextToFile(text);
                     TextRecognized?.Invoke(this, text);
+                }
 
-                // 7. 줄 단위로 분리
+                // 8. 줄 단위로 분리
                 List<string> currentLines = text
                     .Split('\n')
                     .Select(l => l.Trim())
                     .Where(l => !string.IsNullOrWhiteSpace(l))
                     .ToList();
 
-                // 8. 이전 캡처와 비교해서 신규 줄만 추출
+                // 9. 이전 캡처와 비교해서 신규 줄만 추출
                 List<string> newLines = GetNewLines(_prevLines, currentLines);
 
-                // 9. 신규 줄에서 아이템 파싱 후 이벤트 발생
+                // 10. 신규 줄에서 아이템 파싱 후 이벤트 발생
                 foreach (var line in newLines)
                 {
                     var match = _dropRegex.Match(line);
                     if (match.Success)
                     {
+                        // 아이템명에서 한글만 추출 (오타 제거용)
+                        string rawItemName = match.Groups[1].Value;
+                        string itemName = Regex.Replace(rawItemName, @"[^가-힣]", "");
+
+                        if (string.IsNullOrEmpty(itemName)) continue;
+
+                        // 수량 파싱 시도 (숫자가 없으면 기본 1개로 처리)
+                        var qtyMatch = Regex.Match(line.Substring(match.Index + match.Length), @"(\d+)");
+                        int quantity = qtyMatch.Success ? int.Parse(qtyMatch.Groups[1].Value) : 1;
+
                         ItemDropped?.Invoke(this, new DroppedItemEventArgs
                         {
-                            ItemName = match.Groups[2].Value,
-                            Quantity = int.Parse(match.Groups[3].Value),
+                            ItemName = itemName,
+                            Quantity = quantity,
                             DroppedAt = DateTime.Now
                         });
+                        //ItemDropped?.Invoke(this, new DroppedItemEventArgs
+                        //{
+                        //    ItemName = match.Groups[2].Value,
+                        //    Quantity = int.Parse(match.Groups[3].Value),
+                        //    DroppedAt = DateTime.Now
+                        //});
                     }
                 }
 
-                // 10. 현재 줄 목록을 이전 목록으로 저장
+                // 11. 현재 줄 목록을 이전 목록으로 저장
                 _prevLines = currentLines;
 
-                // 11. 리소스 해제
+                // 12. 리소스 해제
                 fullCapture.Dispose();
                 cropped.Dispose();
                 enlarged.Dispose();
-                softwareBitmap.Dispose();
+                processed.Dispose();
+                mat.Dispose();
+                gray.Dispose();
+                binary.Dispose();
             }
             catch (Exception ex)
             {
                 TextRecognized?.Invoke(this, $"오류: {ex.Message}");
             }
-        }
-
-        // Bitmap → SoftwareBitmap 변환
-        private SoftwareBitmap BitmapToSoftwareBitmap(Bitmap bitmap)
-        {
-            // Bitmap을 BGRA8 포맷으로 변환
-            Bitmap bmp = new(bitmap.Width, bitmap.Height, PixelFormat.Format32bppArgb);
-            using (Graphics g = Graphics.FromImage(bmp))
-                g.DrawImage(bitmap, 0, 0);
-
-            BitmapData data = bmp.LockBits(
-                new Rectangle(0, 0, bmp.Width, bmp.Height),
-                ImageLockMode.ReadOnly,
-                PixelFormat.Format32bppArgb);
-
-            byte[] bytes = new byte[data.Stride * data.Height];
-            Marshal.Copy(data.Scan0, bytes, 0, bytes.Length);
-            bmp.UnlockBits(data);
-
-            SoftwareBitmap softwareBitmap = new(
-                BitmapPixelFormat.Bgra8,
-                bmp.Width,
-                bmp.Height,
-                BitmapAlphaMode.Premultiplied);
-
-            softwareBitmap.CopyFromBuffer(bytes.AsBuffer());
-
-            return softwareBitmap;
         }
 
         // 신규 줄 판별 로직
@@ -265,6 +276,37 @@ namespace GersangTracker.Services
         public void Dispose()
         {
             _timer.Dispose();
+        }
+
+        private void SaveTextToFile(string text)
+        {
+            try
+            {
+                // 1. 폴더 생성
+                if (!Directory.Exists(_logDirectory))
+                {
+                    Directory.CreateDirectory(_logDirectory);
+                }
+
+                // 2. 파일명 결정 (파일명에는 : 를 쓸 수 없으므로 언더바(_)나 하이픈(-) 사용)
+                // 예: C:\temp\ocr_log_2026-03-27.txt
+                string fileName = $"ocr_log_{DateTime.Now:yyyy-MM-dd}.txt";
+                string filePath = Path.Combine(_logDirectory, fileName);
+
+                // 3. 로그 내용 구성
+                StringBuilder sb = new StringBuilder();
+                sb.AppendLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}]");
+                sb.AppendLine(text);
+                sb.AppendLine(new string('-', 30));
+
+                // 4. 파일 쓰기 (AppendAllText는 파일이 없으면 만들고, 있으면 이어붙입니다)
+                File.AppendAllText(filePath, sb.ToString(), Encoding.UTF8);
+            }
+            catch (Exception ex)
+            {
+                // 권한 문제나 파일 사용 중 오류 발생 시 출력
+                TextRecognized?.Invoke(this, $"파일 저장 실패: {ex.Message}");
+            }
         }
     }
 }
