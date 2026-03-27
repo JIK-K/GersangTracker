@@ -33,6 +33,16 @@ namespace GersangTracker.Views
         private async void StopHunting_Click(object sender, RoutedEventArgs e)
         {
             int sessionId = await _viewModel.StopAsync();
+
+            var priceViewModel = new PriceViewModel(
+                sessionId,
+                _viewModel.CurrentMonster,
+                _viewModel.ItemSummaries.ToList());
+
+            var priceWindow = new PriceWindow(priceViewModel);
+            priceWindow.Owner = this.Owner;
+            priceWindow.Show();
+
             Close();
         }
     }

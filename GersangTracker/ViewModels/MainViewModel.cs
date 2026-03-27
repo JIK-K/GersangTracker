@@ -91,5 +91,15 @@ namespace GersangTracker.ViewModels
             window.Owner = Application.Current.MainWindow;
             window.Show();
         }
+
+        // 세션 열기
+        [RelayCommand]
+        private void OpenSessions(Monster monster)
+        {
+            var viewModel = new SessionViewModel(monster);
+            var window = new SessionWindow(viewModel);
+            window.Owner = Application.Current.MainWindow;
+            window.Show();
+        }
     }
 }

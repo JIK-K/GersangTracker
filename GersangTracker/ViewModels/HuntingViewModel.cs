@@ -72,6 +72,14 @@ namespace GersangTracker.ViewModels
 
             AddStatusLog("OCR 시작됨");
             AddStatusLog("거상 창 감지 중...");
+
+            App.Current.Dispatcher.Invoke(() =>
+            {
+                DropLogs.Insert(0, new DropLog { ItemName = "화염석", Quantity = 1, DroppedAt = DateTime.Now });
+                DropLogs.Insert(0, new DropLog { ItemName = "거월부", Quantity = 2, DroppedAt = DateTime.Now });
+                ItemSummaries.Add(new ItemSummary { ItemName = "화염석", TotalQuantity = 1 });
+                ItemSummaries.Add(new ItemSummary { ItemName = "거월부", TotalQuantity = 2 });
+            });
         }
 
         // 1초마다 경과시간 업데이트

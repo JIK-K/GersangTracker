@@ -17,7 +17,7 @@
             <Setter Property="Padding" Value="20"/>
             <Setter Property="Margin" Value="8"/>
             <Setter Property="Width" Value="200"/>
-            <Setter Property="Height" Value="160"/>
+            <Setter Property="Height" Value="200"/>
         </Style>
 
         <!-- 기본 버튼 -->
@@ -146,6 +146,7 @@
                                         <RowDefinition Height="*"/>
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
 
                                     <!-- 몬스터 이름 -->
@@ -167,9 +168,20 @@
                                             Command="{Binding DataContext.StartHuntingCommand,
                                                       RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                             CommandParameter="{Binding}"/>
+                                    <!-- 세션 목록 버튼 -->
+                                    <Button Grid.Row="2"
+                                            Content="세션 목록"
+                                            Style="{StaticResource PrimaryButton}"
+                                            Background="#222831"
+                                            HorizontalAlignment="Stretch"
+                                            Margin="0,0,0,6"
+                                            FontSize="11"
+                                            Command="{Binding DataContext.OpenSessionsCommand,
+                                                      RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                            CommandParameter="{Binding}"/>
 
                                     <!-- 이름변경 / 삭제 -->
-                                    <Grid Grid.Row="2">
+                                    <Grid Grid.Row="3">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="8"/>
@@ -179,7 +191,7 @@
                                         <Button Grid.Column="0"
                                                 Content="이름변경"
                                                 Style="{StaticResource PrimaryButton}"
-                                                Background="#393E46"
+                                                Background="#222831"
                                                 HorizontalAlignment="Stretch"
                                                 FontSize="11"
                                                 Command="{Binding DataContext.RenameMonsterCommand,

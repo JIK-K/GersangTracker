@@ -19,7 +19,8 @@ namespace GersangTracker.Services
         {
             using var package = new ExcelPackage();
 
-            CreateSummarySheet(package, session, monster);
+            // dropLogs 파라미터 추가
+            CreateSummarySheet(package, session, monster, dropLogs);
             CreateDropLogSheet(package, dropLogs);
             CreateItemSummarySheet(package, dropLogs);
 
@@ -27,7 +28,7 @@ namespace GersangTracker.Services
         }
 
         // 시트1 - 요약
-        private void CreateSummarySheet(ExcelPackage package, Session session, Monster monster)
+        private void CreateSummarySheet(ExcelPackage package, Session session, Monster monster, List<DropLog> dropLogs)
         {
             var ws = package.Workbook.Worksheets.Add("요약");
 
@@ -35,7 +36,7 @@ namespace GersangTracker.Services
             SetHeader(ws, 1, 1, "항목");
             SetHeader(ws, 1, 2, "내용");
 
-            // 데이터
+            // 기본 정보
             TimeSpan huntingTime = session.EndedAt - session.StartedAt;
             double hours = huntingTime.TotalHours;
             long profitPerHour = hours > 0 ? (long)(session.TotalProfit / hours) : 0;
@@ -63,8 +64,43 @@ namespace GersangTracker.Services
             ws.Cells[8, 2].Value = profitPerHour;
             ws.Cells[8, 2].Style.Numberformat.Format = "#,##0";
 
+            // 빈 줄
+            // 아이템 목록 헤더
+            SetHeader(ws, 10, 1, "아이템명");
+            SetHeader(ws, 10, 2, "수량");
+            SetHeader(ws, 10, 3, "단가");
+            SetHeader(ws, 10, 4, "합계");
+
+            // 아이템 합산
+            var grouped = dropLogs
+                .GroupBy(d => d.ItemName)
+                .Select(g => new
+                {
+                    ItemName = g.Key,
+                    TotalQuantity = g.Sum(d => d.Quantity),
+                    UnitPrice = g.First().UnitPrice,
+                    Total = g.Sum(d => d.UnitPrice * d.Quantity)
+                })
+                .ToList();
+
+            for (int i = 0; i < grouped.Count; i++)
+            {
+                int row = i + 11;
+                var item = grouped[i];
+
+                ws.Cells[row, 1].Value = item.ItemName;
+                ws.Cells[row, 2].Value = item.TotalQuantity;
+                ws.Cells[row, 3].Value = item.UnitPrice;
+                ws.Cells[row, 4].Value = item.Total;
+
+                ws.Cells[row, 3].Style.Numberformat.Format = "#,##0";
+                ws.Cells[row, 4].Style.Numberformat.Format = "#,##0";
+            }
+
             ws.Column(1).Width = 15;
-            ws.Column(2).Width = 25;
+            ws.Column(2).Width = 20;
+            ws.Column(3).Width = 15;
+            ws.Column(4).Width = 15;
         }
 
         // 시트2 - 드랍 상세 로그
