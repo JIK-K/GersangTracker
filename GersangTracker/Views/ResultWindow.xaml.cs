@@ -24,8 +24,14 @@ namespace GersangTracker.Views
         }
 
        private void ConfirmButton_Click(object sender, RoutedEventArgs e)
-        {
-            Close();
-        }
+            => Close();
+        private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+            => DragMove();
+
+        private void MinimizeButton_Click(object sender, RoutedEventArgs e)
+            => WindowState = WindowState.Minimized;
+
+        private void CloseButton_Click(object sender, RoutedEventArgs e)
+            => Close();
     }
 }

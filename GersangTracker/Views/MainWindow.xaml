@@ -3,46 +3,67 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:GersangTracker.ViewModels"
         Title="GersangTracker" Height="700" Width="1000"
-        Background="#222831">
+        WindowStyle="None" AllowsTransparency="True"
+        ResizeMode="CanResize"
+        Background="Transparent">
 
     <Window.DataContext>
         <vm:MainViewModel/>
     </Window.DataContext>
 
     <Window.Resources>
-        <!-- 카드 스타일 -->
-        <Style x:Key="CardStyle" TargetType="Border">
-            <Setter Property="Background" Value="#393E46"/>
-            <Setter Property="CornerRadius" Value="6"/>
-            <Setter Property="Padding" Value="20"/>
-            <Setter Property="Margin" Value="8"/>
-            <Setter Property="Width" Value="200"/>
-            <Setter Property="Height" Value="200"/>
+        <Style x:Key="TitleBarButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#EEEEEE"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Width" Value="40"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bg" Background="{TemplateBinding Background}" CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bg" Property="Background" Value="#393E46"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
-        <!-- 기본 버튼 -->
+        <Style x:Key="CloseButton" TargetType="Button" BasedOn="{StaticResource TitleBarButton}">
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#C0392B"/>
+                    <Setter Property="Foreground" Value="White"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
         <Style x:Key="PrimaryButton" TargetType="Button">
             <Setter Property="Background" Value="#00ADB5"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="Padding" Value="10,7"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontSize" Value="11"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border Background="{TemplateBinding Background}"
                                 CornerRadius="4"
                                 Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"/>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
 
-        <!-- 사이드바 버튼 -->
         <Style x:Key="SidebarButton" TargetType="Button">
             <Setter Property="Background" Value="#00ADB5"/>
             <Setter Property="Foreground" Value="White"/>
@@ -57,8 +78,7 @@
                         <Border Background="{TemplateBinding Background}"
                                 CornerRadius="4"
                                 Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"/>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                     </ControlTemplate>
                 </Setter.Value>
@@ -66,154 +86,211 @@
         </Style>
     </Window.Resources>
 
-    <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="200"/>
-            <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
-
-        <!-- 사이드바 -->
-        <Border Grid.Column="0" Background="#393E46">
-            <StackPanel Margin="16">
-
-                <!-- 타이틀 -->
-                <TextBlock Text="GersangTracker"
-                           Foreground="White"
-                           FontSize="16"
-                           FontWeight="Bold"
-                           Margin="0,16,0,32"/>
-
-                <!-- 몬스터 추가 라벨 -->
-                <TextBlock Text="몬스터 추가"
-                           Foreground="#EEEEEE"
-                           Opacity="0.6"
-                           FontSize="11"
-                           Margin="0,0,0,6"/>
-
-                <!-- 몬스터 이름 입력 -->
-                <TextBox Height="36"
-                         Padding="10,8"
-                         Background="#222831"
-                         Foreground="White"
-                         BorderThickness="0"
-                         CaretBrush="White"
-                         Text="{Binding NewMonsterName, UpdateSourceTrigger=PropertyChanged}"
-                         VerticalContentAlignment="Center"
-                         Margin="0,0,0,8">
-                    <TextBox.Resources>
-                        <Style TargetType="Border">
-                            <Setter Property="CornerRadius" Value="4"/>
-                        </Style>
-                    </TextBox.Resources>
-                </TextBox>
-
-                <Button Content="+ 추가"
-                        Style="{StaticResource SidebarButton}"
-                        Command="{Binding AddMonsterCommand}"/>
-            </StackPanel>
-        </Border>
-
-        <!-- 메인 컨텐츠 -->
-        <Grid Grid.Column="1">
+    <Border Background="#222831" CornerRadius="10"
+            BorderBrush="#393E46" BorderThickness="1">
+        <Border.Effect>
+            <DropShadowEffect Color="Black" Opacity="0.4" BlurRadius="20" ShadowDepth="4"/>
+        </Border.Effect>
+        <Grid>
             <Grid.RowDefinitions>
-                <RowDefinition Height="60"/>
+                <RowDefinition Height="40"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <!-- 상단 타이틀 -->
-            <Border Grid.Row="0" Background="#222831">
-                <TextBlock Text="몬스터 목록"
-                           Foreground="White"
-                           FontSize="18"
-                           FontWeight="Bold"
-                           VerticalAlignment="Center"
-                           Margin="24,0"/>
+            <!-- 커스텀 타이틀바 -->
+            <Border Grid.Row="0" Background="#222831"
+                    CornerRadius="10,10,0,0"
+                    MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                <Grid Margin="16,0,8,0">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Ellipse Width="8" Height="8" Fill="#00ADB5" Margin="0,0,8,0"/>
+                        <TextBlock Text="GersangTracker"
+                                   Foreground="White"
+                                   FontSize="13"
+                                   FontWeight="Bold"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center">
+                        <!-- 최소화 -->
+                        <Button Style="{StaticResource TitleBarButton}"
+                                Click="MinimizeButton_Click">
+                            <Path Data="M 8,12 L 24,12" Stroke="#EEEEEE" StrokeThickness="1.5"
+                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                        </Button>
+                        <!-- 닫기 -->
+                        <Button Style="{StaticResource TitleBarButton}"
+                                Click="CloseButton_Click">
+                            <Path Data="M 8,8 L 22,22 M 22,8 L 8,22"
+                                  Stroke="#EEEEEE" StrokeThickness="1.5"
+                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                        </Button>
+                    </StackPanel>
+                </Grid>
             </Border>
 
-            <!-- 카드 목록 -->
-            <ScrollViewer Grid.Row="1" Margin="16">
-                <ItemsControl ItemsSource="{Binding Monsters}">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <WrapPanel/>
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Border Style="{StaticResource CardStyle}">
-                                <Grid>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="*"/>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                    </Grid.RowDefinitions>
+            <!-- 메인 레이아웃 -->
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="200"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
 
-                                    <!-- 몬스터 이름 -->
-                                    <TextBlock Grid.Row="0"
-                                               Text="{Binding Name}"
-                                               Foreground="White"
-                                               FontSize="15"
-                                               FontWeight="Bold"
-                                               TextWrapping="Wrap"
-                                               VerticalAlignment="Center"
-                                               HorizontalAlignment="Left"/>
+                <!-- 사이드바 -->
+                <Border Grid.Column="0" Background="#393E46"
+                        CornerRadius="0,0,0,10">
+                    <StackPanel Margin="16">
+                        <TextBlock Text="몬스터 추가"
+                                   Foreground="#EEEEEE"
+                                   Opacity="0.6"
+                                   FontSize="11"
+                                   Margin="0,16,0,6"/>
+                        <TextBox Height="36"
+                                 Padding="10,8"
+                                 Background="#222831"
+                                 Foreground="White"
+                                 BorderThickness="0"
+                                 CaretBrush="White"
+                                 Text="{Binding NewMonsterName, UpdateSourceTrigger=PropertyChanged}"
+                                 VerticalContentAlignment="Center"
+                                 Margin="0,0,0,8">
+                            <TextBox.Resources>
+                                <Style TargetType="Border">
+                                    <Setter Property="CornerRadius" Value="4"/>
+                                </Style>
+                            </TextBox.Resources>
+                            <TextBox.InputBindings>
+                                <KeyBinding Key="Return" Command="{Binding AddMonsterCommand}"/>
+                            </TextBox.InputBindings>
+                        </TextBox>
+                        <Button Content="+ 추가"
+                                Style="{StaticResource SidebarButton}"
+                                Command="{Binding AddMonsterCommand}"/>
+                    </StackPanel>
+                </Border>
 
-                                    <!-- 사냥 시작 버튼 -->
-                                    <Button Grid.Row="1"
-                                            Content="사냥 시작"
-                                            Style="{StaticResource PrimaryButton}"
-                                            HorizontalAlignment="Stretch"
-                                            Margin="0,8,0,6"
-                                            Command="{Binding DataContext.StartHuntingCommand,
-                                                      RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                            CommandParameter="{Binding}"/>
-                                    <!-- 세션 목록 버튼 -->
-                                    <Button Grid.Row="2"
-                                            Content="세션 목록"
-                                            Style="{StaticResource PrimaryButton}"
-                                            Background="#222831"
-                                            HorizontalAlignment="Stretch"
-                                            Margin="0,0,0,6"
-                                            FontSize="11"
-                                            Command="{Binding DataContext.OpenSessionsCommand,
-                                                      RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                            CommandParameter="{Binding}"/>
+                <!-- 메인 컨텐츠 -->
+                <Grid Grid.Column="1">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="50"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
 
-                                    <!-- 이름변경 / 삭제 -->
-                                    <Grid Grid.Row="3">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="8"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
+                    <Border Grid.Row="0" Background="#222831" Padding="24,0,0,0">
+                        <TextBlock Text="몬스터 목록"
+                                   Foreground="White"
+                                   FontSize="16"
+                                   FontWeight="Bold"
+                                   VerticalAlignment="Center"/>
+                    </Border>
 
-                                        <Button Grid.Column="0"
-                                                Content="이름변경"
-                                                Style="{StaticResource PrimaryButton}"
-                                                Background="#222831"
-                                                HorizontalAlignment="Stretch"
-                                                FontSize="11"
-                                                Command="{Binding DataContext.RenameMonsterCommand,
-                                                          RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                CommandParameter="{Binding}"/>
+                    <ScrollViewer Grid.Row="1" Margin="16">
+                        <ItemsControl ItemsSource="{Binding Monsters}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Width="210" Margin="8"
+                                            Background="#393E46"
+                                            CornerRadius="10">
+                                        <Border.Effect>
+                                            <DropShadowEffect Color="Black" Opacity="0.3"
+                                                              BlurRadius="10" ShadowDepth="3"/>
+                                        </Border.Effect>
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
 
-                                        <Button Grid.Column="2"
-                                                Content="삭제"
-                                                Style="{StaticResource PrimaryButton}"
-                                                Background="#C0392B"
-                                                HorizontalAlignment="Stretch"
-                                                FontSize="11"
-                                                Command="{Binding DataContext.DeleteMonsterCommand,
-                                                          RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                CommandParameter="{Binding}"/>
-                                    </Grid>
-                                </Grid>
-                            </Border>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </ScrollViewer>
+                                            <Border Grid.Row="0" Background="#00ADB5"
+                                                    CornerRadius="10,10,0,0"
+                                                    Padding="16,14">
+                                                <TextBlock Text="{Binding Name}"
+                                                           Foreground="White"
+                                                           FontSize="16"
+                                                           FontWeight="Bold"
+                                                           TextWrapping="Wrap"/>
+                                            </Border>
+
+                                            <StackPanel Grid.Row="1" Margin="12,12,12,4">
+                                                <Button Content="⚔ 사냥 시작"
+                                                        Style="{StaticResource PrimaryButton}"
+                                                        HorizontalAlignment="Stretch"
+                                                        FontSize="12"
+                                                        FontWeight="Bold"
+                                                        Padding="10,9"
+                                                        Margin="0,0,0,6"
+                                                        Command="{Binding DataContext.StartHuntingCommand,
+                                                            RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                        CommandParameter="{Binding}"/>
+                                                <Grid Margin="0,0,0,6">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="6"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <Button Grid.Column="0"
+                                                            Content="📦 아이템"
+                                                            Style="{StaticResource PrimaryButton}"
+                                                            Background="#2D3139"
+                                                            Foreground="#00ADB5"
+                                                            HorizontalAlignment="Stretch"
+                                                            Command="{Binding DataContext.ManageItemsCommand,
+                                                                RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                            CommandParameter="{Binding}"/>
+                                                    <Button Grid.Column="2"
+                                                            Content="📋 세션"
+                                                            Style="{StaticResource PrimaryButton}"
+                                                            Background="#2D3139"
+                                                            Foreground="#EEEEEE"
+                                                            HorizontalAlignment="Stretch"
+                                                            Command="{Binding DataContext.OpenSessionsCommand,
+                                                                RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                            CommandParameter="{Binding}"/>
+                                                </Grid>
+                                            </StackPanel>
+
+                                            <Grid Grid.Row="2" Margin="12,0,12,12">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="6"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Button Grid.Column="0"
+                                                        Content="✏ 이름변경"
+                                                        Style="{StaticResource PrimaryButton}"
+                                                        Background="#2D3139"
+                                                        Foreground="#EEEEEE"
+                                                        HorizontalAlignment="Stretch"
+                                                        FontSize="10"
+                                                        Command="{Binding DataContext.RenameMonsterCommand,
+                                                            RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                        CommandParameter="{Binding}"/>
+                                                <Button Grid.Column="2"
+                                                        Content="🗑 삭제"
+                                                        Style="{StaticResource PrimaryButton}"
+                                                        Background="#C0392B"
+                                                        Foreground="White"
+                                                        HorizontalAlignment="Stretch"
+                                                        FontSize="10"
+                                                        Command="{Binding DataContext.DeleteMonsterCommand,
+                                                            RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                        CommandParameter="{Binding}"/>
+                                            </Grid>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Grid>
+            </Grid>
         </Grid>
-    </Grid>
+    </Border>
 </Window>

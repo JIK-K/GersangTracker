@@ -55,6 +55,10 @@ namespace GersangTracker.ViewModels
             {
                 AddStatusLog($"OCR : {text}");
             };
+            _ocrService.StatusLog += (message) => 
+            {
+                AddStatusLog(message);
+            };
 
             // DispatcherTimer 설정 - 1초마다 경과시간 업데이트
             _dispatcherTimer = new DispatcherTimer();
@@ -67,6 +71,10 @@ namespace GersangTracker.ViewModels
         {
             _startTime = DateTime.Now;
             _sessionId = await _databaseService.AddSessionAsync(CurrentMonster.Id, _startTime);
+
+            var items = await _databaseService.GetMonsterItemsAsync(CurrentMonster.Id);
+            _ocrService.SetTargetItems(items.Select(x => x.ItemName).ToList());
+
             _dispatcherTimer.Start();
             _ocrService.Start();
 
@@ -118,6 +126,7 @@ namespace GersangTracker.ViewModels
             _dispatcherTimer.Stop();
 
             // OCR 정지
+            _ocrService.SaveLogFile();
             _ocrService.Stop();
             _ocrService.Dispose();
 
