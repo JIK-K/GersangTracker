@@ -48,6 +48,26 @@ namespace GersangTracker.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "monster_items",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    MonsterId = table.Column<int>(type: "INTEGER", nullable: false),
+                    ItemName = table.Column<string>(type: "TEXT", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_monster_items", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_monster_items_Monsters_MonsterId",
+                        column: x => x.MonsterId,
+                        principalTable: "Monsters",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Sessions",
                 columns: table => new
                 {
@@ -103,6 +123,11 @@ namespace GersangTracker.Migrations
                 column: "MonsterId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_monster_items_MonsterId",
+                table: "monster_items",
+                column: "MonsterId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Sessions_MonsterId",
                 table: "Sessions",
                 column: "MonsterId");
@@ -116,6 +141,9 @@ namespace GersangTracker.Migrations
 
             migrationBuilder.DropTable(
                 name: "ItemPrices");
+
+            migrationBuilder.DropTable(
+                name: "monster_items");
 
             migrationBuilder.DropTable(
                 name: "Sessions");

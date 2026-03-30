@@ -90,6 +90,26 @@ namespace GersangTracker.Migrations
                     b.ToTable("Monsters");
                 });
 
+            modelBuilder.Entity("GersangTracker.Models.MonsterItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ItemName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("MonsterId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MonsterId");
+
+                    b.ToTable("monster_items", (string)null);
+                });
+
             modelBuilder.Entity("GersangTracker.Models.Session", b =>
                 {
                     b.Property<int>("Id")
@@ -130,6 +150,17 @@ namespace GersangTracker.Migrations
                 {
                     b.HasOne("GersangTracker.Models.Monster", "Monster")
                         .WithMany("ItemPrices")
+                        .HasForeignKey("MonsterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Monster");
+                });
+
+            modelBuilder.Entity("GersangTracker.Models.MonsterItem", b =>
+                {
+                    b.HasOne("GersangTracker.Models.Monster", "Monster")
+                        .WithMany()
                         .HasForeignKey("MonsterId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();

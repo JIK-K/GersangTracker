@@ -22,7 +22,6 @@ namespace GersangTracker.Services
     {
         // @Debug
         private readonly string _logDirectory = @"C:\temp";
-        private readonly string _logFileName = "ocr_logs.txt";
 
         #region Windows API
         // 창 제목으로 게임 창 핸들(고유 ID)을 찾아오는 API
@@ -59,14 +58,16 @@ namespace GersangTracker.Services
 
         // OCR 텍스트 인식 결과 알림 (디버그용)
         public event EventHandler<string>? TextRecognized;
+        public event Action<string>? StatusLog;
 
-        // 정규식 - [닉네임]님이 [아이템명] N개를 획득하였습니다
-        //private readonly Regex _dropRegex = new(@"\[(.+?)\]님.{1,3}\[(.+?)\]\s*(\d+)\s*개를\s*획득하");
-        //private readonly Regex _dropRegex = new(@"\[.+?\][^\[]*\[([가-힣\s]+)\]\s*(\d+)");
-        private readonly Regex _dropRegex = new(@"\[.+?\].*?\[([^\]]+)\]");
+        // 정규식 - 마지막 [] 안을 아이템명으로 파싱 (중첩 대괄호 대응)
+        private readonly Regex _dropRegex = new(@"\[.+?\].*\[([^\]]+)\]");
 
         // 이전 캡처 줄 목록 - 신규 드랍 판별에 사용
         private List<string> _prevLines = new();
+
+        // 직전 캡처에서 확정된 드랍 줄 목록 - 중복 방지용
+        private List<string> _lastConfirmedLines = new();
 
         // 1초마다 캡처를 실행하는 타이머
         private readonly System.Timers.Timer _timer;
@@ -76,12 +77,16 @@ namespace GersangTracker.Services
 
         // 캡처 영역 설정
         private readonly int _startX = 0;
-        private readonly int _startY = 55;
-        private readonly int _cropWidth = 400;
-        private readonly int _cropHeight = 200;
+        private readonly int _startY = 60;
+        private readonly int _cropWidth = 230;
+        private readonly int _cropHeight = 130;
 
         // 거상 창 감지 상태
         private bool _wasWindowFound = false;
+
+        // 레벤슈타인 매칭 대상 아이템 목록
+        private List<string> _targetItems = new();
+        private readonly List<string> _ocrLogs = new();
 
         public OcrService()
         {
@@ -106,6 +111,7 @@ namespace GersangTracker.Services
         public void Start()
         {
             _prevLines.Clear();
+            _lastConfirmedLines.Clear();
             _timer.Start();
         }
 
@@ -114,6 +120,19 @@ namespace GersangTracker.Services
         {
             _timer.Stop();
             _prevLines.Clear();
+            _lastConfirmedLines.Clear();
+        }
+
+        public void SetTargetItems(List<string> items)
+        {
+            _targetItems = items;
+        }
+
+        // OCR 결과 + 매칭/폐기/중복 모두 로그 파일 + 상태 로그에 기록
+        private void Log(string message)
+        {
+            _ocrLogs.Add($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {message}");
+            StatusLog?.Invoke(message);
         }
 
         // 1초마다 실행되는 캡처 로직
@@ -150,8 +169,8 @@ namespace GersangTracker.Services
                 Rectangle cropRect = new(_startX, _startY, _cropWidth, _cropHeight);
                 Bitmap cropped = fullCapture.Clone(cropRect, fullCapture.PixelFormat);
 
-                // 5. 이미지 2배 확대
-                Bitmap enlarged = new Bitmap(cropped.Width * 2, cropped.Height * 2);
+                // 5. 이미지 3배 확대 (인식률 향상)
+                Bitmap enlarged = new Bitmap(cropped.Width * 3, cropped.Height * 3);
                 using (Graphics g = Graphics.FromImage(enlarged))
                 {
                     g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
@@ -167,54 +186,76 @@ namespace GersangTracker.Services
                 Bitmap processed = BitmapConverter.ToBitmap(binary);
 
                 // 7. Tesseract OCR 실행
-                string tempPath = Path.Combine(Path.GetTempPath(), "ocr_temp.png");
+                string tempPath = Path.Combine(_logDirectory, "ocr_temp.png");
+                if (!Directory.Exists(_logDirectory))
+                    Directory.CreateDirectory(_logDirectory);
                 processed.Save(tempPath);
 
                 using var engine = new TesseractEngine(_tessPath, "kor", EngineMode.Default);
+                engine.SetVariable("tessedit_pageseg_mode", "6"); // 단일 블록 텍스트 모드
                 using var img = Pix.LoadFromFile(tempPath);
                 using var page = engine.Process(img);
                 string text = page.GetText().Trim();
 
+                // 8. 텍스트 후처리
                 // 글자 사이 공백 제거
                 text = Regex.Replace(text, @"(?<=\S) (?=\S)", "");
+
+                // 대괄호 유사 문자 통일
                 text = text.Replace("{", "[").Replace("}", "]")
-                           .Replace("(", "[").Replace(")", "]")
                            .Replace("【", "[").Replace("】", "]")
                            .Replace("〔", "[").Replace("〕", "]")
-                           .Replace("「", "[").Replace("」", "]");
+                           .Replace("「", "[").Replace("」", "]")
+                           .Replace("｢", "[").Replace("｣", "]");
 
-                // @Debug
+                // @Debug - OCR 원문을 구분선과 함께 별도 블록으로 기록
                 if (!string.IsNullOrWhiteSpace(text))
                 {
-                    SaveTextToFile(text);
+                    _ocrLogs.Add($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [OCR]\n{text}\n{new string('-', 30)}");
                     TextRecognized?.Invoke(this, text);
                 }
 
-                // 8. 줄 단위로 분리
+                // 9. 줄 단위로 분리
                 List<string> currentLines = text
                     .Split('\n')
                     .Select(l => l.Trim())
                     .Where(l => !string.IsNullOrWhiteSpace(l))
                     .ToList();
 
-                // 9. 이전 캡처와 비교해서 신규 줄만 추출
+                // 10. 이전 캡처와 비교해서 신규 줄만 추출
                 List<string> newLines = GetNewLines(_prevLines, currentLines);
 
-                // 10. 신규 줄에서 아이템 파싱 후 이벤트 발생
+                // 11. 신규 줄에서 아이템 파싱 후 이벤트 발생
+                List<string> confirmedLines = new();
+
                 foreach (var line in newLines)
                 {
                     var match = _dropRegex.Match(line);
                     if (match.Success)
                     {
-                        // 아이템명에서 한글만 추출 (오타 제거용)
+                        // 아이템명에서 한글만 추출
                         string rawItemName = match.Groups[1].Value;
-                        string itemName = Regex.Replace(rawItemName, @"[^가-힣]", "");
+                        string cleaned = Regex.Replace(rawItemName, @"[^가-힣]", "");
 
-                        if (string.IsNullOrEmpty(itemName)) continue;
+                        if (string.IsNullOrEmpty(cleaned)) continue;
 
-                        // 수량 파싱 시도 (숫자가 없으면 기본 1개로 처리)
+                        // 레벤슈타인 매칭
+                        string? itemName = MatchToTarget(cleaned);
+                        if (itemName == null) continue;
+
+                        // 직전 캡처에서 이미 확정된 줄이면 중복 스킵
+                        if (_lastConfirmedLines.Contains(line))
+                        {
+                            Log($"[중복스킵] {itemName}");
+                            continue;
+                        }
+
+                        // 수량 파싱 (없으면 기본 1개)
                         var qtyMatch = Regex.Match(line.Substring(match.Index + match.Length), @"(\d+)");
                         int quantity = qtyMatch.Success ? int.Parse(qtyMatch.Groups[1].Value) : 1;
+
+                        confirmedLines.Add(line);
+                        Log($"[드랍확정] {itemName} x{quantity}");
 
                         ItemDropped?.Invoke(this, new DroppedItemEventArgs
                         {
@@ -222,19 +263,16 @@ namespace GersangTracker.Services
                             Quantity = quantity,
                             DroppedAt = DateTime.Now
                         });
-                        //ItemDropped?.Invoke(this, new DroppedItemEventArgs
-                        //{
-                        //    ItemName = match.Groups[2].Value,
-                        //    Quantity = int.Parse(match.Groups[3].Value),
-                        //    DroppedAt = DateTime.Now
-                        //});
                     }
                 }
 
-                // 11. 현재 줄 목록을 이전 목록으로 저장
+                // 확정된 드랍 줄 갱신
+                _lastConfirmedLines = confirmedLines;
+
+                // 12. 현재 줄 목록을 이전 목록으로 저장
                 _prevLines = currentLines;
 
-                // 12. 리소스 해제
+                // 13. 리소스 해제
                 fullCapture.Dispose();
                 cropped.Dispose();
                 enlarged.Dispose();
@@ -245,6 +283,7 @@ namespace GersangTracker.Services
             }
             catch (Exception ex)
             {
+                Log($"[오류] {ex.Message}");
                 TextRecognized?.Invoke(this, $"오류: {ex.Message}");
             }
         }
@@ -282,40 +321,72 @@ namespace GersangTracker.Services
             return bitmap;
         }
 
-        public void Dispose()
+        // 레벤슈타인 거리 계산
+        private static int GetLevenshteinDistance(string s, string t)
         {
-            _timer.Dispose();
+            int n = s.Length, m = t.Length;
+            var d = new int[n + 1, m + 1];
+
+            for (int i = 0; i <= n; i++) d[i, 0] = i;
+            for (int j = 0; j <= m; j++) d[0, j] = j;
+
+            for (int i = 1; i <= n; i++)
+                for (int j = 1; j <= m; j++)
+                {
+                    int cost = s[i - 1] == t[j - 1] ? 0 : 1;
+                    d[i, j] = Math.Min(
+                        Math.Min(d[i - 1, j] + 1, d[i, j - 1] + 1),
+                        d[i - 1, j - 1] + cost);
+                }
+            return d[n, m];
         }
 
-        private void SaveTextToFile(string text)
+        // OCR 결과 → 등록 아이템으로 매칭
+        private string? MatchToTarget(string ocrResult)
+        {
+            if (_targetItems.Count == 0) return ocrResult;
+
+            var best = _targetItems
+                .Select(target => (target, dist: GetLevenshteinDistance(ocrResult, target)))
+                .OrderBy(x => x.dist)
+                .FirstOrDefault();
+
+            // 임계값: 글자수의 50% 또는 최대 3 중 큰 값
+            int threshold = Math.Max(3, (int)Math.Ceiling(ocrResult.Length * 0.5));
+
+            if (best.dist <= threshold)
+            {
+                Log($"[매칭] {ocrResult} → {best.target} (거리:{best.dist}/임계:{threshold})");
+                return best.target;
+            }
+
+            Log($"[폐기] {ocrResult} (거리:{best.dist} > 임계:{threshold})");
+            return null;
+        }
+
+        public void SaveLogFile()
         {
             try
             {
-                // 1. 폴더 생성
+                if (_ocrLogs.Count == 0) return;
                 if (!Directory.Exists(_logDirectory))
-                {
                     Directory.CreateDirectory(_logDirectory);
-                }
 
-                // 2. 파일명 결정 (파일명에는 : 를 쓸 수 없으므로 언더바(_)나 하이픈(-) 사용)
-                // 예: C:\temp\ocr_log_2026-03-27.txt
-                string fileName = $"ocr_log_{DateTime.Now:yyyy-MM-dd}.txt";
+                string fileName = $"ocr_log_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.txt";
                 string filePath = Path.Combine(_logDirectory, fileName);
 
-                // 3. 로그 내용 구성
-                StringBuilder sb = new StringBuilder();
-                sb.AppendLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}]");
-                sb.AppendLine(text);
-                sb.AppendLine(new string('-', 30));
-
-                // 4. 파일 쓰기 (AppendAllText는 파일이 없으면 만들고, 있으면 이어붙입니다)
-                File.AppendAllText(filePath, sb.ToString(), Encoding.UTF8);
+                File.WriteAllText(filePath, string.Join("\n", _ocrLogs), Encoding.UTF8);
+                _ocrLogs.Clear();
             }
             catch (Exception ex)
             {
-                // 권한 문제나 파일 사용 중 오류 발생 시 출력
-                TextRecognized?.Invoke(this, $"파일 저장 실패: {ex.Message}");
+                StatusLog?.Invoke($"파일 저장 실패: {ex.Message}");
             }
+        }
+
+        public void Dispose()
+        {
+            _timer.Dispose();
         }
     }
 }

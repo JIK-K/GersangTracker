@@ -29,6 +29,14 @@ namespace GersangTracker.Views
             base.OnContentRendered(e);
             await _viewModel.StartAsync();
         }
+        private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+            => DragMove();
+
+        private void MinimizeButton_Click(object sender, RoutedEventArgs e)
+            => WindowState = WindowState.Minimized;
+
+        private void CloseButton_Click(object sender, RoutedEventArgs e)
+            => Close();
 
         private async void StopHunting_Click(object sender, RoutedEventArgs e)
         {
@@ -40,10 +48,11 @@ namespace GersangTracker.Views
                 _viewModel.ItemSummaries.ToList());
 
             var priceWindow = new PriceWindow(priceViewModel);
-            priceWindow.Owner = this.Owner;
             priceWindow.Show();
 
             Close();
         }
+
+        
     }
 }

@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using GersangTracker.Models;
 using GersangTracker.Services;
 using System.Collections.ObjectModel;
+using System.Text.RegularExpressions;
 
 namespace GersangTracker.ViewModels
 {
@@ -10,7 +11,10 @@ namespace GersangTracker.ViewModels
     public partial class PriceItem : ObservableObject
     {
         public string ItemName { get; set; } = string.Empty;
-        public int TotalQuantity { get; set; }
+
+        // 수량 - 편집 가능하도록 변경
+        [ObservableProperty]
+        private int _totalQuantity;
 
         // 단가 입력값 - 변경시 UI 자동 반영
         [ObservableProperty]
@@ -37,13 +41,19 @@ namespace GersangTracker.ViewModels
         public string MonsterName => _monster.Name;
         public Monster Monster => _monster;
 
+        // 아이템 직접 추가용
+        [ObservableProperty]
+        private string _newItemName = string.Empty;
+
+        [ObservableProperty]
+        private string _newItemQuantity = "1";
+
         public PriceViewModel(int sessionId, Monster monster, List<ItemSummary> itemSummaries)
         {
             _databaseService = new DatabaseService();
             _sessionId = sessionId;
             _monster = monster;
 
-            // ItemSummary → PriceItem 변환
             foreach (var item in itemSummaries)
             {
                 PriceItems.Add(new PriceItem
@@ -67,30 +77,58 @@ namespace GersangTracker.ViewModels
             }
         }
 
+        // 아이템 직접 추가
+        [RelayCommand]
+        private void AddItem()
+        {
+            var name = NewItemName.Trim();
+            if (string.IsNullOrEmpty(name)) return;
+            if (PriceItems.Any(x => x.ItemName == name)) return;
+
+            int.TryParse(NewItemQuantity, out int qty);
+            if (qty <= 0) qty = 1;
+
+            PriceItems.Add(new PriceItem
+            {
+                ItemName = name,
+                TotalQuantity = qty,
+                UnitPriceInput = "0"
+            });
+
+            NewItemName = string.Empty;
+            NewItemQuantity = "1";
+        }
+
+        // 아이템 삭제
+        [RelayCommand]
+        private void RemoveItem(PriceItem item)
+        {
+            PriceItems.Remove(item);
+        }
+
         // 계산하기
         [RelayCommand]
         private async Task CalculateAsync()
         {
-            // 단가 DB 저장
             foreach (var item in PriceItems)
             {
                 if (item.UnitPrice > 0)
                     await _databaseService.SaveItemPriceAsync(_monster.Id, item.ItemName, item.UnitPrice);
             }
 
-            // 드랍 로그 단가 업데이트
+            // 드랍 로그 단가 DB에 실제로 저장
             var dropLogs = await _databaseService.GetDropLogsBySessionAsync(_sessionId);
             foreach (var log in dropLogs)
             {
                 var priceItem = PriceItems.FirstOrDefault(p => p.ItemName == log.ItemName);
                 if (priceItem != null)
+                {
                     log.UnitPrice = priceItem.UnitPrice;
+                    await _databaseService.UpdateDropLogUnitPriceAsync(log.Id, log.UnitPrice); // ← 추가
+                }
             }
 
-            // 총 수익 계산
             long totalProfit = PriceItems.Sum(p => p.Total);
-
-            // 세션 수익 업데이트
             await _databaseService.UpdateSessionAsync(_sessionId, DateTime.Now, totalProfit);
         }
 
