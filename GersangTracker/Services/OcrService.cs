@@ -89,6 +89,15 @@ namespace GersangTracker.Services
                 AppDomain.CurrentDomain.BaseDirectory,
                 "Assets", "tessdata");
 
+            if (!File.Exists(Path.Combine(_tessPath, "kor.traineddata")))
+            {
+                throw new FileNotFoundException(
+                    "한국어 OCR 데이터 파일이 존재하지 않습니다.\n" +
+                    $"경로: {_tessPath}\\kor.traineddata\n\n" +
+                    "https://github.com/tesseract-ocr/tessdata 에서\n" +
+                    "kor.traineddata 파일을 다운로드하여 위 경로에 넣어주세요.");
+            }
+
             _timer = new System.Timers.Timer(1000);
             _timer.Elapsed += OnTimerElapsed;
         }

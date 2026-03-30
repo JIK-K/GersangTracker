@@ -1,6 +1,7 @@
 ﻿using GersangTracker.ViewModels;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -26,7 +27,15 @@ namespace GersangTracker.Views
         protected override async void OnContentRendered(EventArgs e)
         {
             base.OnContentRendered(e);
-            await _viewModel.LoadPreviousPricesAsync();
+            try
+            {
+                await _viewModel.LoadPreviousPricesAsync();
+            }catch(FileNotFoundException ex)
+            {
+                MessageBox.Show(ex.Message, "OCR 파일 없음",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                Close();
+            }
         }
         private async void CalculateButton_Click(object sender, RoutedEventArgs e)
         {
