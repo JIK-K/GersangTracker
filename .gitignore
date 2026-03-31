@@ -23,9 +23,6 @@ artifacts/
 *.pdb
 *.cache
 
-# tessdata (용량 큰 파일)
-**/tessdata/*.traineddata
-
 # SQLite DB 파일 (로컬 데이터)
 *.db
 *.db-shm
