@@ -88,6 +88,9 @@ namespace GersangTracker.Services
         private List<string> _targetItems = new();
         private readonly List<string> _ocrLogs = new();
 
+        // 중복 실행 방지 플래그
+        private bool _isProcessing = false;
+
         public OcrService()
         {
             _tessPath = Path.Combine(
@@ -112,6 +115,7 @@ namespace GersangTracker.Services
         {
             _prevLines.Clear();
             _lastConfirmedLines.Clear();
+            _isProcessing = false;
             _timer.Start();
         }
 
@@ -121,6 +125,7 @@ namespace GersangTracker.Services
             _timer.Stop();
             _prevLines.Clear();
             _lastConfirmedLines.Clear();
+            _isProcessing = false;
         }
 
         public void SetTargetItems(List<string> items)
@@ -138,39 +143,59 @@ namespace GersangTracker.Services
         // 1초마다 실행되는 캡처 로직
         private void OnTimerElapsed(object? sender, ElapsedEventArgs e)
         {
+            if (_isProcessing) return;
+            _isProcessing = true;
+
+            Bitmap? fullCapture = null;
+            Bitmap? cropped = null;
+            Bitmap? enlarged = null;
+            Bitmap? processed = null;
+            Mat? mat = null;
+            Mat? gray = null;
+            Mat? binary = null;
+
             try
             {
                 // 1. 거상 창 찾기
                 IntPtr hwnd = FindWindow(null!, "Gersang");
 
-                if (hwnd == IntPtr.Zero && _wasWindowFound)
+                if (hwnd == IntPtr.Zero)
                 {
-                    _wasWindowFound = false;
-                    WindowDetected?.Invoke(this, false);
+                    if (_wasWindowFound)
+                    {
+                        _wasWindowFound = false;
+                        WindowDetected?.Invoke(this, false);
+                    }
                     return;
                 }
-                else if (hwnd != IntPtr.Zero && !_wasWindowFound)
+
+                if (!_wasWindowFound)
                 {
                     _wasWindowFound = true;
                     WindowDetected?.Invoke(this, true);
                 }
-
-                if (hwnd == IntPtr.Zero) return;
 
                 // 2. 창 크기 가져오기
                 GetWindowRect(hwnd, out RECT rect);
                 int windowWidth = rect.Right - rect.Left;
                 int windowHeight = rect.Bottom - rect.Top;
 
+                // 창이 너무 작으면 스킵
+                if (windowWidth < _startX + _cropWidth || windowHeight < _startY + _cropHeight)
+                {
+                    Log("[경고] 거상 창이 너무 작습니다. 창 크기를 키워주세요.");
+                    return;
+                }
+
                 // 3. 창 전체 캡처
-                Bitmap fullCapture = CaptureWindow(hwnd, windowWidth, windowHeight);
+                fullCapture = CaptureWindow(hwnd, windowWidth, windowHeight);
 
                 // 4. 드랍 메시지 영역만 Crop
                 Rectangle cropRect = new(_startX, _startY, _cropWidth, _cropHeight);
-                Bitmap cropped = fullCapture.Clone(cropRect, fullCapture.PixelFormat);
+                cropped = fullCapture.Clone(cropRect, fullCapture.PixelFormat);
 
                 // 5. 이미지 3배 확대 (인식률 향상)
-                Bitmap enlarged = new Bitmap(cropped.Width * 3, cropped.Height * 3);
+                enlarged = new Bitmap(cropped.Width * 3, cropped.Height * 3);
                 using (Graphics g = Graphics.FromImage(enlarged))
                 {
                     g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
@@ -178,18 +203,25 @@ namespace GersangTracker.Services
                 }
 
                 // 6. 전처리 - 그레이스케일 → 이진화
-                Mat mat = BitmapConverter.ToMat(enlarged);
-                Mat gray = new();
-                Mat binary = new();
+                mat = BitmapConverter.ToMat(enlarged);
+                gray = new Mat();
+                binary = new Mat();
                 Cv2.CvtColor(mat, gray, ColorConversionCodes.BGR2GRAY);
                 Cv2.Threshold(gray, binary, 180, 255, ThresholdTypes.Binary);
-                Bitmap processed = BitmapConverter.ToBitmap(binary);
+                processed = BitmapConverter.ToBitmap(binary);
 
                 // 7. Tesseract OCR 실행
                 string tempPath = Path.Combine(_logDirectory, "ocr_temp.png");
                 if (!Directory.Exists(_logDirectory))
                     Directory.CreateDirectory(_logDirectory);
                 processed.Save(tempPath);
+
+                // 파일 저장 검증
+                if (!File.Exists(tempPath) || new FileInfo(tempPath).Length == 0)
+                {
+                    Log("[경고] OCR 이미지 저장 실패");
+                    return;
+                }
 
                 using var engine = new TesseractEngine(_tessPath, "kor", EngineMode.Default);
                 engine.SetVariable("tessedit_pageseg_mode", "6"); // 단일 블록 텍스트 모드
@@ -271,20 +303,24 @@ namespace GersangTracker.Services
 
                 // 12. 현재 줄 목록을 이전 목록으로 저장
                 _prevLines = currentLines;
-
-                // 13. 리소스 해제
-                fullCapture.Dispose();
-                cropped.Dispose();
-                enlarged.Dispose();
-                processed.Dispose();
-                mat.Dispose();
-                gray.Dispose();
-                binary.Dispose();
             }
             catch (Exception ex)
             {
                 Log($"[오류] {ex.Message}");
                 TextRecognized?.Invoke(this, $"오류: {ex.Message}");
+            }
+            finally
+            {
+                // 리소스 해제 - finally 에서 보장
+                fullCapture?.Dispose();
+                cropped?.Dispose();
+                enlarged?.Dispose();
+                processed?.Dispose();
+                mat?.Dispose();
+                gray?.Dispose();
+                binary?.Dispose();
+
+                _isProcessing = false;
             }
         }
 
