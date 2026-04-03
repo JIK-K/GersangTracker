@@ -21,7 +21,9 @@ namespace GersangTracker.Services
     public class OcrService : IDisposable
     {
         // @Debug
-        private readonly string _logDirectory = @"C:\temp";
+        private readonly string _logDirectory = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "GersangTracker", "logs");
 
         #region Windows API
         // 창 제목으로 게임 창 핸들(고유 ID)을 찾아오는 API
