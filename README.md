@@ -1,5 +1,5 @@
 # ![favicon](https://github.com/user-attachments/assets/8e3ec54d-697d-4713-813c-396aa4a40abb) GersangTracker
-
+거상 트래커
 
 
 거상 게임의 사냥 중 아이템 드랍을 실시간 감지하고, 시간당 수익을 계산하는 데스크탑 앱입니다.
