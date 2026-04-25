@@ -8,8 +8,8 @@
     <UseWPF>true</UseWPF>
     <ApplicationIcon>favicon.ico</ApplicationIcon>
     <PackageIcon>Gersang_Tracker.png</PackageIcon>
-	<AssemblyVersion>1.0.1</AssemblyVersion>
-	<FileVersion>1.0.1</FileVersion>
+	<AssemblyVersion>1.0.2</AssemblyVersion>
+	<FileVersion>1.0.2</FileVersion>
 	<Version>1.0.1</Version>
 	<AssemblyTitle>GersangTracker</AssemblyTitle>
 	<Description>거상 트래커</Description>
