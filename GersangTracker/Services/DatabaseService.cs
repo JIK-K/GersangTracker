@@ -1,4 +1,4 @@
-﻿using GersangTracker.Data;
+using GersangTracker.Data;
 using GersangTracker.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -203,5 +203,71 @@ namespace GersangTracker.Services
                 await db.SaveChangesAsync();
             }
         }
+
+        // 세션의 드랍 로그 전체 동기화 (수량 수정 및 신규 추가 대응)
+        public async Task SyncDropLogsAsync(int sessionId, List<PriceItemSummary> items)
+        {
+            using var db = new AppDbContext();
+            var existingLogs = await db.DropLogs
+                .Where(d => d.SessionId == sessionId)
+                .ToListAsync();
+
+            // 1. 현재 화면에 있는 아이템들 처리
+            foreach (var item in items)
+            {
+                var logsOfItem = existingLogs.Where(l => l.ItemName == item.ItemName).ToList();
+
+                if (logsOfItem.Any())
+                {
+                    // 기존 로그가 있는 경우: 모두 삭제 후 사용자가 수정한 수량으로 통합된 하나의 로그 생성
+                    // (개별 드랍 시간보다는 전체 통계의 정확성이 우선되는 화면이므로 병합 처리)
+                    var firstDroppedAt = logsOfItem.OrderBy(l => l.DroppedAt).First().DroppedAt;
+                    db.DropLogs.RemoveRange(logsOfItem);
+
+                    if (item.TotalQuantity > 0)
+                    {
+                        db.DropLogs.Add(new DropLog
+                        {
+                            SessionId = sessionId,
+                            ItemName = item.ItemName,
+                            Quantity = item.TotalQuantity,
+                            UnitPrice = item.UnitPrice,
+                            DroppedAt = firstDroppedAt
+                        });
+                    }
+                }
+                else
+                {
+                    // 기존 로그가 없는 경우 (수동 추가된 아이템): 신규 생성
+                    if (item.TotalQuantity > 0)
+                    {
+                        db.DropLogs.Add(new DropLog
+                        {
+                            SessionId = sessionId,
+                            ItemName = item.ItemName,
+                            Quantity = item.TotalQuantity,
+                            UnitPrice = item.UnitPrice,
+                            DroppedAt = DateTime.Now
+                        });
+                    }
+                }
+            }
+
+            // 2. 사용자가 목록에서 삭제한 아이템 처리
+            var itemNamesInView = items.Select(i => i.ItemName).ToHashSet();
+            var logsToDelete = existingLogs.Where(l => !itemNamesInView.Contains(l.ItemName));
+            db.DropLogs.RemoveRange(logsToDelete);
+
+            await db.SaveChangesAsync();
+        }
+    }
+
+
+    // 통계용 모델 (Service 내부용)
+    public class PriceItemSummary
+    {
+        public string ItemName { get; set; } = string.Empty;
+        public int TotalQuantity { get; set; }
+        public long UnitPrice { get; set; }
     }
 }

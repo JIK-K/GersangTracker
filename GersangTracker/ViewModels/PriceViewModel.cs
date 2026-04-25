@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GersangTracker.Models;
 using GersangTracker.Services;
@@ -110,27 +110,28 @@ namespace GersangTracker.ViewModels
         [RelayCommand]
         private async Task CalculateAsync()
         {
+            // 1. 전역 아이템 단가 저장 (몬스터별 설정 유지용)
             foreach (var item in PriceItems)
             {
                 if (item.UnitPrice > 0)
                     await _databaseService.SaveItemPriceAsync(_monster.Id, item.ItemName, item.UnitPrice);
             }
 
-            // 드랍 로그 단가 DB에 실제로 저장
-            var dropLogs = await _databaseService.GetDropLogsBySessionAsync(_sessionId);
-            foreach (var log in dropLogs)
+            // 2. 현재 세션의 드랍 로그 동기화 (수량, 단가, 신규 아이템)
+            var syncItems = PriceItems.Select(p => new PriceItemSummary
             {
-                var priceItem = PriceItems.FirstOrDefault(p => p.ItemName == log.ItemName);
-                if (priceItem != null)
-                {
-                    log.UnitPrice = priceItem.UnitPrice;
-                    await _databaseService.UpdateDropLogUnitPriceAsync(log.Id, log.UnitPrice); // ← 추가
-                }
-            }
+                ItemName = p.ItemName,
+                TotalQuantity = p.TotalQuantity,
+                UnitPrice = p.UnitPrice
+            }).ToList();
 
+            await _databaseService.SyncDropLogsAsync(_sessionId, syncItems);
+
+            // 3. 세션 정보 업데이트 (총 수익 및 종료 시간)
             long totalProfit = PriceItems.Sum(p => p.Total);
             await _databaseService.UpdateSessionAsync(_sessionId, DateTime.Now, totalProfit);
         }
+
 
         // 총 수익
         public long TotalProfit => PriceItems.Sum(p => p.Total);
