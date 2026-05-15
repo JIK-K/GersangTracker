@@ -1,16 +1,15 @@
-﻿<Window x:Class="GersangTracker.Views.SessionWindow"
+<Window x:Class="GersangTracker.Views.SessionWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
         Title="세션 목록" Height="540" Width="620"
-        WindowStyle="None" AllowsTransparency="True"
-        ResizeMode="NoResize"
         WindowStartupLocation="CenterScreen"
-        Background="Transparent">
+        Style="{StaticResource AnimatedWindowStyle}">
 
-    <Border Background="#222831" CornerRadius="10"
-            BorderBrush="#393E46" BorderThickness="1">
+    <Border Background="{StaticResource BackgroundPrimary}" CornerRadius="12"
+            BorderBrush="{StaticResource BackgroundSecondary}" BorderThickness="1">
         <Border.Effect>
-            <DropShadowEffect Color="Black" Opacity="0.4" BlurRadius="20" ShadowDepth="4"/>
+            <StaticResource ResourceKey="SoftDropShadow"/>
         </Border.Effect>
         <Grid>
             <Grid.RowDefinitions>
@@ -21,7 +20,7 @@
             </Grid.RowDefinitions>
 
             <!-- 커스텀 타이틀바 -->
-            <Border Grid.Row="0" Background="#222831" CornerRadius="10,10,0,0"
+            <Border Grid.Row="0" Background="{StaticResource BackgroundSecondary}" CornerRadius="12,12,0,0"
                     MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
                 <Grid Margin="16,0,8,0">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
@@ -30,47 +29,23 @@
                                    FontWeight="Bold" VerticalAlignment="Center"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                        <Button Width="40" Height="32" Background="Transparent" BorderThickness="0"
-                                Cursor="Hand" Click="MinimizeButton_Click">
-                            <Button.Template>
-                                <ControlTemplate TargetType="Button">
-                                    <Border x:Name="bg" Background="Transparent" CornerRadius="4">
-                                        <Path Data="M 8,12 L 24,12" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
-                                    </Border>
-                                    <ControlTemplate.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="bg" Property="Background" Value="#393E46"/>
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Button.Template>
+                        <Button Style="{StaticResource TitleBarButton}" Click="MinimizeButton_Click">
+                            <Path Data="M 8,12 L 24,12" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
                         </Button>
-                        <Button Width="40" Height="32" Background="Transparent" BorderThickness="0"
-                                Cursor="Hand" Click="CloseButton_Click">
-                            <Button.Template>
-                                <ControlTemplate TargetType="Button">
-                                    <Border x:Name="bg" Background="Transparent" CornerRadius="4">
-                                        <Path Data="M 8,8 L 22,22 M 22,8 L 8,22" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
-                                    </Border>
-                                    <ControlTemplate.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="bg" Property="Background" Value="#C0392B"/>
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Button.Template>
+                        <Button Style="{StaticResource CloseButton}" Click="CloseButton_Click">
+                            <Path Data="M 8,8 L 22,22 M 22,8 L 8,22" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
                         </Button>
                     </StackPanel>
                 </Grid>
             </Border>
 
             <!-- 헤더 -->
-            <Border Grid.Row="1" Background="#393E46" Margin="12,0,12,0" CornerRadius="6">
+            <Border Grid.Row="1" Background="{StaticResource BackgroundSecondary}" Margin="12,0,12,0" CornerRadius="8">
                 <Grid Margin="16,0">
-                    <TextBlock Text="세션 목록" Foreground="White" FontSize="15"
+                    <TextBlock Text="세션 목록" Foreground="{StaticResource TextPrimary}" FontSize="15"
                                FontWeight="Bold" VerticalAlignment="Center"/>
-                    <TextBlock Text="{Binding MonsterName}" Foreground="#00ADB5"
-                               FontSize="13" FontWeight="Bold"
+                    <TextBlock Text="{Binding MonsterName}" Foreground="{StaticResource AccentColor}"
+                               FontSize="14" FontWeight="Bold"
                                VerticalAlignment="Center" HorizontalAlignment="Right"/>
                 </Grid>
             </Border>
@@ -83,13 +58,13 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="60"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Text="날짜" Foreground="#EEEEEE"
-                           Opacity="0.5" FontSize="11" VerticalAlignment="Center"/>
-                <TextBlock Grid.Column="1" Text="사냥 시간" Foreground="#EEEEEE"
-                           Opacity="0.5" FontSize="11" VerticalAlignment="Center"
+                <TextBlock Grid.Column="0" Text="날짜" Foreground="{StaticResource TextSecondary}"
+                           FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="1" Text="사냥 시간" Foreground="{StaticResource TextSecondary}"
+                           FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"
                            HorizontalAlignment="Center"/>
-                <TextBlock Grid.Column="2" Text="총 수익" Foreground="#EEEEEE"
-                           Opacity="0.5" FontSize="11" VerticalAlignment="Center"
+                <TextBlock Grid.Column="2" Text="총 수익" Foreground="{StaticResource TextSecondary}"
+                           FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"
                            HorizontalAlignment="Right"/>
             </Grid>
 
@@ -98,7 +73,8 @@
                 <ItemsControl ItemsSource="{Binding Sessions}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Border Background="#393E46" CornerRadius="6" Margin="8,3" Padding="12,10"
+                            <Border Background="Transparent" Margin="8,0" Padding="12,12"
+                                    BorderBrush="{StaticResource SeparatorColor}" BorderThickness="0,0,0,1"
                                     Cursor="Hand" MouseLeftButtonDown="Session_MouseLeftButtonDown">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
@@ -109,29 +85,24 @@
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Grid.Column="0"
                                                Text="{Binding StartedAt, StringFormat={}{0:yyyy-MM-dd HH:mm}}"
-                                               Foreground="White" FontSize="12" VerticalAlignment="Center"/>
+                                               Foreground="{StaticResource TextPrimary}" FontSize="13" VerticalAlignment="Center"/>
                                     <TextBlock Grid.Column="1" Text="{Binding HuntingTimeDisplay}"
-                                               Foreground="#EEEEEE" FontSize="12"
+                                               Foreground="{StaticResource TextSecondary}" FontSize="13"
                                                VerticalAlignment="Center" HorizontalAlignment="Center"/>
                                     <TextBlock Grid.Column="2"
                                                Text="{Binding TotalProfit, StringFormat={}{0:N0} 원}"
-                                               Foreground="#00ADB5" FontSize="12" FontWeight="Bold"
+                                               Foreground="{StaticResource AccentColor}" FontSize="13" FontWeight="Bold"
                                                VerticalAlignment="Center" HorizontalAlignment="Right"/>
-                                    <Button Grid.Column="3" Content="삭제"
-                                            Background="#C0392B" Foreground="White"
-                                            BorderThickness="0" Cursor="Hand"
+                                    <Button Grid.Column="3"
+                                            Style="{StaticResource DangerButton}"
                                             FontSize="11" Padding="8,4" HorizontalAlignment="Center"
                                             Command="{Binding DataContext.DeleteSessionCommand,
                                                 RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                             CommandParameter="{Binding}">
-                                        <Button.Template>
-                                            <ControlTemplate TargetType="Button">
-                                                <Border Background="{TemplateBinding Background}"
-                                                        CornerRadius="4" Padding="{TemplateBinding Padding}">
-                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                </Border>
-                                            </ControlTemplate>
-                                        </Button.Template>
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <iconPacks:PackIconMaterial Kind="Delete" Width="10" Height="10" Margin="0,0,4,0"/>
+                                            <TextBlock Text="삭제"/>
+                                        </StackPanel>
                                     </Button>
                                 </Grid>
                             </Border>
