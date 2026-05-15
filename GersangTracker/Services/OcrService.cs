@@ -1,4 +1,4 @@
-﻿using OpenCvSharp;
+using OpenCvSharp;
 using OpenCvSharp.Extensions;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -278,7 +278,17 @@ namespace GersangTracker.Services
                         if (itemName == null) continue;
 
                         // 직전 캡처에서 이미 확정된 줄이면 중복 스킵
-                        if (_lastConfirmedLines.Contains(line))
+                        bool isDuplicate = false;
+                        foreach (var confirmedLine in _lastConfirmedLines)
+                        {
+                            if (CalculateSimilarity(confirmedLine, line) >= 0.7)
+                            {
+                                isDuplicate = true;
+                                break;
+                            }
+                        }
+
+                        if (isDuplicate)
                         {
                             Log($"[중복스킵] {itemName}");
                             continue;
@@ -326,24 +336,97 @@ namespace GersangTracker.Services
             }
         }
 
-        // 신규 줄 판별 로직
+        // 두 문자열의 유사도를 계산 (0.0 ~ 1.0)
+        private double CalculateSimilarity(string line1, string line2)
+        {
+            if (line1 == line2) return 1.0;
+
+            var match1 = _dropRegex.Match(line1);
+            var match2 = _dropRegex.Match(line2);
+
+            string item1 = match1.Success ? Regex.Replace(match1.Groups[1].Value, @"[^가-힣]", "") : "";
+            string item2 = match2.Success ? Regex.Replace(match2.Groups[1].Value, @"[^가-힣]", "") : "";
+
+            if (match1.Success && match2.Success)
+            {
+                if (!string.IsNullOrEmpty(item1) && !string.IsNullOrEmpty(item2))
+                {
+                    int itemDist = GetLevenshteinDistance(item1, item2);
+                    int maxItemLen = Math.Max(item1.Length, item2.Length);
+                    double itemSim = maxItemLen == 0 ? 1.0 : 1.0 - ((double)itemDist / maxItemLen);
+
+                    // 핵심 아이템 이름이 50% 이상 다르면 아예 다른 줄로 취급
+                    if (itemSim < 0.5) return 0.0;
+                }
+            }
+
+            int dist = GetLevenshteinDistance(line1, line2);
+            int maxLen = Math.Max(line1.Length, line2.Length);
+            return maxLen == 0 ? 1.0 : 1.0 - ((double)dist / maxLen);
+        }
+
+        // DP(동적 계획법)를 활용한 시퀀스 정렬 기반 신규 줄 판별 로직
         private List<string> GetNewLines(List<string> prev, List<string> current)
         {
             if (current.Count == 0) return new();
             if (prev.Count == 0) return new(current);
 
-            int matchIndex = -1;
-            for (int i = 0; i < current.Count; i++)
+            int n = prev.Count;
+            int m = current.Count;
+            double[,] dp = new double[n + 1, m + 1];
+
+            for (int i = 1; i <= n; i++)
             {
-                if (current[i] == prev[0])
+                for (int j = 1; j <= m; j++)
                 {
-                    matchIndex = i;
-                    break;
+                    string pLine = prev[i - 1];
+                    string cLine = current[j - 1];
+                    double sim = CalculateSimilarity(pLine, cLine);
+
+                    // 일정 수준(60%) 이상 유사할 때만 매칭으로 인정
+                    double matchScore = sim >= 0.6 ? sim : 0;
+
+                    dp[i, j] = Math.Max(dp[i - 1, j - 1] + matchScore, 
+                               Math.Max(dp[i - 1, j], dp[i, j - 1]));
                 }
             }
 
-            if (matchIndex == -1) return new(current);
-            return current.Take(matchIndex).ToList();
+            HashSet<int> matchedCurrIndices = new();
+            int currI = n, currJ = m;
+            while (currI > 0 && currJ > 0)
+            {
+                string pLine = prev[currI - 1];
+                string cLine = current[currJ - 1];
+                double sim = CalculateSimilarity(pLine, cLine);
+                double matchScore = sim >= 0.6 ? sim : 0;
+
+                // 부동 소수점 오차를 고려하여 비교
+                if (matchScore > 0 && Math.Abs(dp[currI, currJ] - (dp[currI - 1, currJ - 1] + matchScore)) < 0.0001)
+                {
+                    matchedCurrIndices.Add(currJ - 1);
+                    currI--;
+                    currJ--;
+                }
+                else if (Math.Abs(dp[currI, currJ] - dp[currI - 1, currJ]) < 0.0001)
+                {
+                    currI--;
+                }
+                else
+                {
+                    currJ--;
+                }
+            }
+
+            List<string> newLines = new();
+            for (int j = 0; j < current.Count; j++)
+            {
+                if (!matchedCurrIndices.Contains(j))
+                {
+                    newLines.Add(current[j]);
+                }
+            }
+
+            return newLines;
         }
 
         // BitBlt 방식으로 게임 창 캡처
