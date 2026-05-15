@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GersangTracker.Models;
 using GersangTracker.Services;
@@ -37,11 +37,11 @@ namespace GersangTracker.ViewModels
         // 아이템 합산 목록 (아이템명 → 총수량)
         public ObservableCollection<ItemSummary> ItemSummaries { get; } = new();
 
-        public HuntingViewModel(Monster monster)
+        public HuntingViewModel(Monster monster, DatabaseService databaseService, OcrService ocrService)
         {
             CurrentMonster = monster;
-            _databaseService = new DatabaseService();
-            _ocrService = new OcrService();
+            _databaseService = databaseService;
+            _ocrService = ocrService;
 
             // OcrService 이벤트 구독 - 새 아이템 감지시 OnItemDropped 호출
             _ocrService.ItemDropped += OnItemDropped;

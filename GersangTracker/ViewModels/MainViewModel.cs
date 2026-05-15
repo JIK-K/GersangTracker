@@ -1,10 +1,11 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GersangTracker.Models;
 using GersangTracker.Services;
 using GersangTracker.Views;
 using System.Collections.ObjectModel;
 using System.Windows;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace GersangTracker.ViewModels
 {
@@ -20,9 +21,9 @@ namespace GersangTracker.ViewModels
         [ObservableProperty]
         private string _newMonsterName = string.Empty;
 
-        public MainViewModel()
+        public MainViewModel(DatabaseService databaseService)
         {
-            _databaseService = new DatabaseService();
+            _databaseService = databaseService;
         }
 
         [RelayCommand]
@@ -89,7 +90,8 @@ namespace GersangTracker.ViewModels
                 return;
             }
 
-            var viewModel = new HuntingViewModel(monster);
+            var ocrService = App.ServiceProvider.GetRequiredService<OcrService>();
+            var viewModel = new HuntingViewModel(monster, _databaseService, ocrService);
             var window = new HuntingWindow(viewModel);
             // 4번 - Owner 제거해서 창 독립
             window.Show();
@@ -98,7 +100,7 @@ namespace GersangTracker.ViewModels
         [RelayCommand]
         private void OpenSessions(Monster monster)
         {
-            var viewModel = new SessionViewModel(monster);
+            var viewModel = new SessionViewModel(monster, _databaseService);
             var window = new SessionWindow(viewModel);
             // 4번 - Owner 제거해서 창 독립
             window.Show();

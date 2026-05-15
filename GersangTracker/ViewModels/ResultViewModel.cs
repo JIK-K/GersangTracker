@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GersangTracker.Models;
 using GersangTracker.Services;
@@ -42,10 +42,10 @@ namespace GersangTracker.ViewModels
             }
         }
 
-        public ResultViewModel(Session session, Monster monster, List<PriceItem> priceItems, List<DropLog> dropLogs)
+        public ResultViewModel(Session session, Monster monster, List<PriceItem> priceItems, List<DropLog> dropLogs, DatabaseService databaseService, ExcelService excelService)
         {
-            _databaseService = new DatabaseService();
-            _excelService = new ExcelService();
+            _databaseService = databaseService;
+            _excelService = excelService;
             _session = session;
             _monster = monster;
             _dropLogs = dropLogs;

@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GersangTracker.Models;
 using GersangTracker.Services;
@@ -17,9 +17,9 @@ namespace GersangTracker.ViewModels
         [ObservableProperty]
         private Session? _selectedSession;
 
-        public SessionViewModel(Monster monster)
+        public SessionViewModel(Monster monster, DatabaseService databaseService)
         {
-            _databaseService = new DatabaseService();
+            _databaseService = databaseService;
             _monster = monster;
         }
 

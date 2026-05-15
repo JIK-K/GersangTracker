@@ -1,4 +1,4 @@
-﻿using GersangTracker.ViewModels;
+using GersangTracker.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -10,6 +10,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace GersangTracker.Views
 {
@@ -42,10 +43,12 @@ namespace GersangTracker.Views
         {
             int sessionId = await _viewModel.StopAsync();
 
+            var dbService = App.ServiceProvider.GetRequiredService<GersangTracker.Services.DatabaseService>();
             var priceViewModel = new PriceViewModel(
                 sessionId,
                 _viewModel.CurrentMonster,
-                _viewModel.ItemSummaries.ToList());
+                _viewModel.ItemSummaries.ToList(),
+                dbService);
 
             var priceWindow = new PriceWindow(priceViewModel);
             priceWindow.Show();

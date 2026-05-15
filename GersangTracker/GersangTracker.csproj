@@ -36,6 +36,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.8" />
     <PackageReference Include="OpenCvSharp4" Version="4.13.0.20260318" />
     <PackageReference Include="OpenCvSharp4.Extensions" Version="4.13.0.20260318" />
     <PackageReference Include="OpenCvSharp4.runtime.win" Version="4.13.0.20260302" />

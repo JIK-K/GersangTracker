@@ -96,16 +96,23 @@ namespace GersangTracker.Services
         // [DropLog] - [Create] 드랍 로그 추가
         public async Task AddDropLogAsync(int sessionId, string itemName, int quantity)
         {
-            using var db = new AppDbContext();
-            db.DropLogs.Add(new DropLog
+            try
             {
-                SessionId = sessionId,
-                DroppedAt = DateTime.Now,
-                ItemName = itemName,
-                Quantity = quantity,
-                UnitPrice = 0
-            });
-            await db.SaveChangesAsync();
+                using var db = new AppDbContext();
+                db.DropLogs.Add(new DropLog
+                {
+                    SessionId = sessionId,
+                    DroppedAt = DateTime.Now,
+                    ItemName = itemName,
+                    Quantity = quantity,
+                    UnitPrice = 0
+                });
+                await db.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"DB Error in AddDropLogAsync: {ex.Message}");
+            }
         }
 
         // [DropLog] - [Read] 세션별 드랍 로그 조회

@@ -1,4 +1,4 @@
-﻿using GersangTracker.Models;
+using GersangTracker.Models;
 using GersangTracker.Services;
 using GersangTracker.ViewModels;
 using System;
@@ -23,7 +23,7 @@ namespace GersangTracker.Views
         {
             InitializeComponent();
             _viewModel = viewModel;
-            _databaseService = new DatabaseService();
+            _databaseService = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<GersangTracker.Services.DatabaseService>(App.ServiceProvider);
             DataContext = _viewModel;
         }
         protected override async void OnContentRendered(EventArgs e)
@@ -48,7 +48,9 @@ namespace GersangTracker.Views
                         UnitPriceInput = g.First().UnitPrice.ToString("N0")
                     }).ToList();
 
-                var resultViewModel = new ResultViewModel(session, monster, priceItems, dropLogs);
+                var dbService = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<GersangTracker.Services.DatabaseService>(App.ServiceProvider);
+                var excelService = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<GersangTracker.Services.ExcelService>(App.ServiceProvider);
+                var resultViewModel = new ResultViewModel(session, monster, priceItems, dropLogs, dbService, excelService);
                 var resultWindow = new ResultWindow(resultViewModel);
                 resultWindow.Owner = this;
                 resultWindow.Show();

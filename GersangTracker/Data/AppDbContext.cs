@@ -20,7 +20,7 @@ namespace GersangTracker.Data
             Directory.CreateDirectory(dbFolder);
 
             string dbPath = Path.Combine(dbFolder, "GersangTracker.db");
-            optionsBuilder.UseSqlite($"Data Source={dbPath}");
+            optionsBuilder.UseSqlite($"Data Source={dbPath};Cache=Shared");
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

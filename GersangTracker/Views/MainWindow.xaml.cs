@@ -1,4 +1,4 @@
-﻿using GersangTracker.ViewModels;
+using GersangTracker.ViewModels;
 using System.Windows;
 using System.Windows.Input;
 
@@ -6,13 +6,13 @@ namespace GersangTracker.Views
 {
     public partial class MainWindow : Window
     {
-        public MainWindow()
+        public MainWindow(MainViewModel viewModel)
         {
             InitializeComponent();
+            DataContext = viewModel;
             Loaded += async (_, _) =>
             {
-                var vm = (MainViewModel)DataContext;
-                await vm.LoadMonstersCommand.ExecuteAsync(null);
+                await viewModel.LoadMonstersCommand.ExecuteAsync(null);
             };
         }
 

@@ -1,4 +1,4 @@
-﻿using GersangTracker.ViewModels;
+using GersangTracker.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -51,11 +51,16 @@ namespace GersangTracker.Views
             var session = await _viewModel.GetSessionAsync();
             var dropLogs = await _viewModel.GetDropLogsAsync();
 
+            var dbService = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<GersangTracker.Services.DatabaseService>(App.ServiceProvider);
+            var excelService = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<GersangTracker.Services.ExcelService>(App.ServiceProvider);
+
             var resultViewModel = new ResultViewModel(
                 session,
                 _viewModel.Monster,
                 _viewModel.PriceItems.ToList(),
-                dropLogs);
+                dropLogs,
+                dbService,
+                excelService);
             var resultWindow = new ResultWindow(resultViewModel);
             resultWindow.Show();
               

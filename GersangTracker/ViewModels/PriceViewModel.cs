@@ -48,9 +48,9 @@ namespace GersangTracker.ViewModels
         [ObservableProperty]
         private string _newItemQuantity = "1";
 
-        public PriceViewModel(int sessionId, Monster monster, List<ItemSummary> itemSummaries)
+        public PriceViewModel(int sessionId, Monster monster, List<ItemSummary> itemSummaries, DatabaseService databaseService)
         {
-            _databaseService = new DatabaseService();
+            _databaseService = databaseService;
             _sessionId = sessionId;
             _monster = monster;
 
