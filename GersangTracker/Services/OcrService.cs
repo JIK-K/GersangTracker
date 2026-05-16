@@ -26,19 +26,19 @@ namespace GersangTracker.Services
             "GersangTracker", "logs");
 
         #region Windows API
-        // 창 제목으로 게임 창 핸들(고유 ID)을 찾아오는 API
+        // 클래스명으로 창을 찾는(윈도우 ID를) 가져오는 API
         [DllImport("user32.dll")]
         static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
 
-        // 창 핸들로 창의 위치와 크기를 가져오는 API
+        // 윈도우 핸들로 창의 크기와 위치를 가져오는 API
         [DllImport("user32.dll")]
         static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
 
-        // 창의 그래픽 컨텍스트(DC)를 가져오는 API
+        // 창의 그래픽 디바이스 컨텍스트(DC)를 가져오는 API
         [DllImport("user32.dll")]
         static extern IntPtr GetDC(IntPtr hWnd);
 
-        // 그래픽 컨텍스트(DC)를 해제하는 API
+        // 그래픽 디바이스 컨텍스트(DC)를 해제하는 API
         [DllImport("user32.dll")]
         static extern int ReleaseDC(IntPtr hWnd, IntPtr hDC);
 
@@ -47,25 +47,25 @@ namespace GersangTracker.Services
         static extern bool BitBlt(IntPtr hdcDest, int nXDest, int nYDest,
             int nWidth, int nHeight, IntPtr hdcSrc, int nXSrc, int nYSrc, uint dwRop);
 
-        // Windows API가 창 영역을 반환할 때 사용하는 구조체
+        // Windows API가 창의 위치를 반환할 때 사용하는 구조체
         [StructLayout(LayoutKind.Sequential)]
         struct RECT { public int Left, Top, Right, Bottom; }
         #endregion
 
-        // 새 아이템 드롭 감지 시 외부로 알려주는 이벤트
+        // 아이템이 드롭 되었을 때 발생하는 이벤트
         public event EventHandler<DroppedItemEventArgs>? ItemDropped;
 
-        // 거상 창 감지 상태 변경 시 알림
+        // 게임 창이 감지된 상태 변화시 이벤트
         public event EventHandler<bool>? WindowDetected;
 
-        // OCR 텍스트 인식 결과 알림 (디버그용)
+        // OCR 텍스트 인식 결과 이벤트 (디버그용)
         public event EventHandler<string>? TextRecognized;
         public event Action<string>? StatusLog;
 
-        // 정규식 - 마지막 [] 안을 아이템명으로 파싱 (중복 대괄호 대응)
+        // 정규식 - 대괄호 [] 형태를 아이템으로 인식 (특수 문자 포함)
         private readonly Regex _dropRegex = new(@"\[.+?\].*\[([^\]]+)\]");
 
-        // 이전 캡처 줄 목록 - 신규 드롭 판별에 사용
+        // 이전 캡처 줄 목록 - 중복 드롭 방지에 사용
         private List<string> _prevLines = new();
 
         // 직전 캡처에서 확정된 드롭 줄 목록 - 중복 방지용
@@ -83,10 +83,10 @@ namespace GersangTracker.Services
         private readonly int _cropWidth = 230;
         private readonly int _cropHeight = 130;
 
-        // 거상 창 감지 상태
+        // 게임 창이 감지된 상태
         private bool _wasWindowFound = false;
 
-        // 레벤슈타인 매칭 대상 아이템 목록
+        // 추적하려는 대상 아이템 목록
         private List<string> _targetItems = new();
         private readonly List<string> _ocrLogs = new();
 
@@ -105,14 +105,14 @@ namespace GersangTracker.Services
                     "한국어 OCR 데이터 파일이 존재하지 않습니다.\n" +
                     $"경로: {_tessPath}\\kor.traineddata\n\n" +
                     "https://github.com/tesseract-ocr/tessdata 에서\n" +
-                    "kor.traineddata 파일을 다운로드하여 해당 경로에 넣어주세요.");
+                    "kor.traineddata 파일을 다운로드하여 위 경로에 넣어주세요.");
             }
 
             _timer = new System.Timers.Timer(1000);
             _timer.Elapsed += OnTimerElapsed;
         }
 
-        // 사냥 시작 - 타이머 시작
+        // 추적 시작 - 타이머 시작
         public void Start()
         {
             _prevLines.Clear();
@@ -121,7 +121,7 @@ namespace GersangTracker.Services
             _timer.Start();
         }
 
-        // 사냥 종료 - 타이머 정지
+        // 추적 종료 - 타이머 정지
         public void Stop()
         {
             _timer.Stop();
@@ -135,14 +135,14 @@ namespace GersangTracker.Services
             _targetItems = items;
         }
 
-        // OCR 결과 + 매칭/폐기/중복 모두 로그 파일 + 상태 로그에 기록
+        // OCR 결과 + 대상/필터/중복 통합 로그 파일 + 상태 로그에 기록
         private void Log(string message)
         {
             _ocrLogs.Add($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {message}");
             StatusLog?.Invoke(message);
         }
 
-        // 1초마다 실행되는 캡처 로직
+        // 1초마다 실행되는 캡처 루프
         private void OnTimerElapsed(object? sender, ElapsedEventArgs e)
         {
             if (_isProcessing) return;
@@ -158,7 +158,7 @@ namespace GersangTracker.Services
 
             try
             {
-                // 1. 거상 창 찾기
+                // 1. 게임 창 찾기
                 IntPtr hwnd = FindWindow(null!, "Gersang");
 
                 if (hwnd == IntPtr.Zero)
@@ -185,18 +185,18 @@ namespace GersangTracker.Services
                 // 창이 너무 작으면 스킵
                 if (windowWidth < _startX + _cropWidth || windowHeight < _startY + _cropHeight)
                 {
-                    Log("[경고] 거상 창이 너무 작습니다. 창 크기를 키워주세요.");
+                    Log("[경고] 게임 창이 너무 작습니다. 창 크기를 확인해주세요.");
                     return;
                 }
 
                 // 3. 창 전체 캡처
                 fullCapture = CaptureWindow(hwnd, windowWidth, windowHeight);
 
-                // 4. 드롭 메시지 영역만 Crop
+                // 4. 드롭 메시지 이미지 영역만 Crop
                 Rectangle cropRect = new(_startX, _startY, _cropWidth, _cropHeight);
                 cropped = fullCapture.Clone(cropRect, fullCapture.PixelFormat);
 
-                // 5. 이미지 3배 확대 (인식률 향상)
+                // 5. 이미지 3배 확대 (인식률을 높임)
                 enlarged = new Bitmap(cropped.Width * 3, cropped.Height * 3);
                 using (Graphics g = Graphics.FromImage(enlarged))
                 {
@@ -204,7 +204,7 @@ namespace GersangTracker.Services
                     g.DrawImage(cropped, 0, 0, enlarged.Width, enlarged.Height);
                 }
 
-                // 6. 전처리 - 그레이스케일 + 이진화
+                // 6. 이진화 - 그레이스케일 후 이진 처리
                 mat = BitmapConverter.ToMat(enlarged);
                 gray = new Mat();
                 binary = new Mat();
@@ -231,18 +231,18 @@ namespace GersangTracker.Services
                 using var page = engine.Process(img);
                 string text = page.GetText().Trim();
 
-                // 8. 텍스트 전처리
-                // 글자 사이 공백 제거
+                // 8. 텍스트 후처리
+                // 단어 사이의 불필요한 공백 제거
                 text = Regex.Replace(text, @"(?<=\S) (?=\S)", "");
 
-                // 대괄호 유사 문자 통일
+                // 특수문자 유사 문자 치환
                 text = text.Replace("{", "[").Replace("}", "]")
                            .Replace("「", "[").Replace("」", "]")
                            .Replace("『", "[").Replace("』", "]")
                            .Replace("【", "[").Replace("】", "]")
                            .Replace("〔", "[").Replace("〕", "]");
 
-                // @Debug - OCR 원문은 구분선과 함께 별도 블록으로 기록
+                // @Debug - OCR 원문을 저장하고 이벤트로도 줄 단위로 기록
                 if (!string.IsNullOrWhiteSpace(text))
                 {
                     _ocrLogs.Add($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [OCR]\n{text}\n{new string('-', 30)}");
@@ -256,10 +256,10 @@ namespace GersangTracker.Services
                     .Where(l => !string.IsNullOrWhiteSpace(l))
                     .ToList();
 
-                // 10. 이전 캡처와 비교해서 신규 줄만 추출
+                // 10. 이전 캡처와 비교해서 새로운 줄만 감지
                 List<string> newLines = GetNewLines(_prevLines, currentLines);
 
-                // 11. 신규 줄에서 아이템 파싱 및 이벤트 발생
+                // 11. 새로운 줄에서 아이템 드롭 감지 및 이벤트 발생
                 List<string> confirmedLines = new();
 
                 foreach (var line in newLines)
@@ -273,7 +273,7 @@ namespace GersangTracker.Services
 
                         if (string.IsNullOrEmpty(cleaned)) continue;
 
-                        // 레벤슈타인 매칭
+                        // 대상 아이템과 매칭
                         string? itemName = MatchToTarget(cleaned);
                         if (itemName == null) continue;
 
@@ -294,7 +294,7 @@ namespace GersangTracker.Services
                             continue;
                         }
 
-                        // 수량 파싱 (없으면 기본 1개)
+                        // 수량 추출 (없으면 기본 1개)
                         var qtyMatch = Regex.Match(line.Substring(match.Index + match.Length), @"(\d+)");
                         int quantity = qtyMatch.Success ? int.Parse(qtyMatch.Groups[1].Value) : 1;
 
@@ -313,7 +313,7 @@ namespace GersangTracker.Services
                 // 확정된 드롭 줄 갱신
                 _lastConfirmedLines = confirmedLines;
 
-                // 12. 현재 줄 목록을 이전 목록으로 저장
+                // 12. 현재 줄 목록을 이전 목록으로 교체
                 _prevLines = currentLines;
             }
             catch (Exception ex)
@@ -321,10 +321,9 @@ namespace GersangTracker.Services
                 Log($"[오류] {ex.Message}");
                 TextRecognized?.Invoke(this, $"오류: {ex.Message}");
             }
-            using var releaseToken = checked(new object()); // 컴파일 최적화 및 유지용 구문 무시 가능
             finally
             {
-                // 리소스 해제 - finally 단에서 보장
+                // 리소스 해제 - finally 에서 처리
                 fullCapture?.Dispose();
                 cropped?.Dispose();
                 enlarged?.Dispose();
@@ -337,7 +336,7 @@ namespace GersangTracker.Services
             }
         }
 
-        // 두 문자열의 유사도를 계산 (0.0 ~ 1.0)
+        // 두 문자열의 유사도 계산 (0.0 ~ 1.0)
         private double CalculateSimilarity(string line1, string line2)
         {
             if (line1 == line2) return 1.0;
@@ -356,7 +355,7 @@ namespace GersangTracker.Services
                     int maxItemLen = Math.Max(item1.Length, item2.Length);
                     double itemSim = maxItemLen == 0 ? 1.0 : 1.0 - ((double)itemDist / maxItemLen);
 
-                    // 핵심 아이템 이름이 50% 이상 다르면 아예 다른 줄로 취급
+                    // 두 아이템 이름의 50% 이상 다르면 완전히 다른 줄로 판단
                     if (itemSim < 0.5) return 0.0;
                 }
             }
@@ -366,7 +365,7 @@ namespace GersangTracker.Services
             return maxLen == 0 ? 1.0 : 1.0 - ((double)dist / maxLen);
         }
 
-        // DP(동적 계획법)를 활용한 시퀀스 정렬 기반 신규 줄 판별 로직
+        // DP(동적 프로그래밍)를 이용한 LCS 기반 새로운 줄 감지 루프
         private List<string> GetNewLines(List<string> prev, List<string> current)
         {
             if (current.Count == 0) return new();
@@ -384,7 +383,7 @@ namespace GersangTracker.Services
                     string cLine = current[j - 1];
                     double sim = CalculateSimilarity(pLine, cLine);
 
-                    // 일정 수준(60%) 이상 유사할 때만 매칭으로 인정
+                    // 일정 임계값(60%) 이상 유사하면 매칭으로 판정
                     double matchScore = sim >= 0.6 ? sim : 0;
 
                     dp[i, j] = Math.Max(dp[i - 1, j - 1] + matchScore,
@@ -401,7 +400,7 @@ namespace GersangTracker.Services
                 double sim = CalculateSimilarity(pLine, cLine);
                 double matchScore = sim >= 0.6 ? sim : 0;
 
-                // 부동 소수점 오차를 고려하여 비교
+                // 부동소수점 오차를 고려하여 역추적
                 if (matchScore > 0 && Math.Abs(dp[currI, currJ] - (dp[currI - 1, currJ - 1] + matchScore)) < 0.0001)
                 {
                     matchedCurrIndices.Add(currJ - 1);
@@ -463,7 +462,7 @@ namespace GersangTracker.Services
             return d[n, m];
         }
 
-        // OCR 결과를 등록 아이템으로 매칭
+        // OCR 결과를 등록된 아이템으로 매칭
         private string? MatchToTarget(string ocrResult)
         {
             if (_targetItems.Count == 0) return ocrResult;
@@ -473,16 +472,16 @@ namespace GersangTracker.Services
                 .OrderBy(x => x.dist)
                 .FirstOrDefault();
 
-            // 임계값: 글자수의 50% 또는 최대 3 글자 중 큰 값
+            // 편집거리가 50% 미만 또는 최소 3 이내
             int threshold = Math.Max(3, (int)Math.Ceiling(ocrResult.Length * 0.5));
 
             if (best.dist <= threshold)
             {
-                Log($"[매칭] {ocrResult} -> {best.target} (거리:{best.dist}/임계:{threshold})");
+                Log($"[매칭] {ocrResult} → {best.target} (거리:{best.dist}/임계:{threshold})");
                 return best.target;
             }
 
-            Log($"[폐기] {ocrResult} (거리:{best.dist} > 임계:{threshold})");
+            Log($"[필터] {ocrResult} (거리:{best.dist} > 임계:{threshold})");
             return null;
         }
 

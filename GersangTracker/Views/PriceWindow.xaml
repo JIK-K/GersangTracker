@@ -143,7 +143,8 @@
                          Background="{StaticResource BackgroundTertiary}"
                          Foreground="{StaticResource TextPrimary}"
                          BorderBrush="{StaticResource AccentColor}" BorderThickness="1"
-                         CaretBrush="{StaticResource TextPrimary}" Padding="8,6" FontSize="12">
+                         CaretBrush="{StaticResource TextPrimary}" Padding="8,6" FontSize="12"
+                         VerticalContentAlignment="Center">
                     <TextBox.Resources>
                         <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
                     </TextBox.Resources>
@@ -157,7 +158,8 @@
                          Foreground="{StaticResource TextPrimary}"
                          BorderBrush="{StaticResource AccentColor}" BorderThickness="1"
                          CaretBrush="{StaticResource TextPrimary}" Padding="6,6" FontSize="12"
-                         HorizontalContentAlignment="Center">
+                         HorizontalContentAlignment="Center"
+                         VerticalContentAlignment="Center">
                     <TextBox.Resources>
                         <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
                     </TextBox.Resources>
@@ -165,7 +167,6 @@
                 <Button Grid.Column="2" Style="{StaticResource PrimaryButton}"
                         Command="{Binding AddItemCommand}">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <iconPacks:PackIconMaterial Kind="Plus" Width="12" Height="12" Margin="0,0,4,0"/>
                         <TextBlock Text="추가"/>
                     </StackPanel>
                 </Button>

@@ -42,7 +42,7 @@
             </Border>
 
             <!-- 헤더 -->
-            <Border Grid.Row="1" Background="{StaticResource BackgroundSecondary}" Margin="12,0,12,0" CornerRadius="8">
+            <Border Grid.Row="1" Background="{StaticResource BackgroundSecondary}" Margin="12,8,12,0" CornerRadius="8">
                 <Grid Margin="16,0">
                     <TextBlock Text="세션 목록" Foreground="{StaticResource TextPrimary}" FontSize="15"
                                FontWeight="Bold" VerticalAlignment="Center"/>
@@ -105,7 +105,6 @@
                                                     RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                 CommandParameter="{Binding}">
                                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                <iconPacks:PackIconMaterial Kind="Delete" Width="10" Height="10" Margin="0,0,4,0"/>
                                                 <TextBlock Text="삭제"/>
                                             </StackPanel>
                                         </Button>
