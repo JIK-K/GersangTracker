@@ -1,4 +1,4 @@
-﻿using GersangTracker.ViewModels;
+using GersangTracker.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -23,6 +23,7 @@ namespace GersangTracker.Views
             Loaded += async (_, _) => await viewModel.LoadAsync();
         }
 
+        private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) => DragMove();
         private void CloseButton_Click(object sender, RoutedEventArgs e) => Close();
     }
 }

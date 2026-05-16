@@ -6,51 +6,56 @@
         WindowStartupLocation="CenterScreen"
         Style="{StaticResource AnimatedWindowStyle}">
 
-    <Border Background="#222831" CornerRadius="10"
-            BorderBrush="#393E46" BorderThickness="1">
+    <Border Background="{StaticResource BackgroundSecondary}" CornerRadius="12"
+            BorderBrush="{StaticResource BackgroundTertiary}" BorderThickness="1">
         <Border.Effect>
-            <DropShadowEffect Color="Black" Opacity="0.4" BlurRadius="20" ShadowDepth="4"/>
+            <StaticResource ResourceKey="SoftDropShadow"/>
         </Border.Effect>
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="40"/>
-                <RowDefinition Height="50"/>
-                <RowDefinition Height="36"/>
+                <RowDefinition Height="56"/>
+                <RowDefinition Height="34"/>
                 <RowDefinition Height="*"/>
-                <RowDefinition Height="52"/>
-                <RowDefinition Height="55"/>
+                <RowDefinition Height="56"/>
+                <RowDefinition Height="58"/>
             </Grid.RowDefinitions>
 
             <!-- 커스텀 타이틀바 -->
-            <Border Grid.Row="0" Background="#222831" CornerRadius="10,10,0,0"
+            <Border Grid.Row="0" Background="{StaticResource BackgroundSecondary}" CornerRadius="12,12,0,0"
                     MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
                 <Grid Margin="16,0,8,0">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <Ellipse Width="8" Height="8" Fill="#00ADB5" Margin="0,0,8,0"/>
-                        <TextBlock Text="가격 입력" Foreground="White" FontSize="13"
+                        <Ellipse Width="8" Height="8" Fill="{StaticResource AccentColor}" Margin="0,0,8,0"/>
+                        <TextBlock Text="가격 입력" Foreground="{StaticResource TextPrimary}" FontSize="13"
                                    FontWeight="Bold" VerticalAlignment="Center"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                        <!-- 최소화 -->
                         <Button Style="{StaticResource TitleBarButton}" Click="MinimizeButton_Click">
-                            <Path Data="M 8,12 L 24,12" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                            <Path Data="M 8,12 L 24,12" Stroke="{StaticResource TextSecondary}" StrokeThickness="1.5"
+                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
                         </Button>
-                        <!-- 닫기 -->
                         <Button Style="{StaticResource CloseButton}" Click="CloseButton_Click">
-                            <Path Data="M 8,8 L 22,22 M 22,8 L 8,22" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                            <Path Data="M 8,8 L 22,22 M 22,8 L 8,22" Stroke="{StaticResource TextSecondary}" StrokeThickness="1.5"
+                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
                         </Button>
                     </StackPanel>
                 </Grid>
             </Border>
 
             <!-- 헤더 -->
-            <Border Grid.Row="1" Background="#393E46" Margin="12,0,12,0" CornerRadius="6">
+            <Border Grid.Row="1" Background="{StaticResource BackgroundTertiary}" Margin="12,0,12,0" CornerRadius="8">
                 <Grid Margin="16,0">
-                    <TextBlock Text="가격 입력" Foreground="White" FontSize="15"
-                               FontWeight="Bold" VerticalAlignment="Center"/>
-                    <TextBlock Text="{Binding MonsterName}" Foreground="#00ADB5"
-                               FontSize="13" FontWeight="Bold"
-                               VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="가격 입력" Foreground="{StaticResource TextPrimary}" FontSize="15"
+                                   FontWeight="Bold"/>
+                    </StackPanel>
+                    <Border HorizontalAlignment="Right" VerticalAlignment="Center"
+                            Background="{StaticResource BackgroundPrimary}"
+                            CornerRadius="5" Padding="10,4">
+                        <TextBlock Text="{Binding MonsterName}" Foreground="{StaticResource AccentColor}"
+                                   FontSize="13" FontWeight="Bold"/>
+                    </Border>
                 </Grid>
             </Border>
 
@@ -62,14 +67,9 @@
                     <ColumnDefinition Width="110"/>
                     <ColumnDefinition Width="36"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Text="아이템명" Foreground="#EEEEEE"
-                           Opacity="0.5" FontSize="11" VerticalAlignment="Center"/>
-                <TextBlock Grid.Column="1" Text="수량" Foreground="#EEEEEE"
-                           Opacity="0.5" FontSize="11" VerticalAlignment="Center"
-                           HorizontalAlignment="Center"/>
-                <TextBlock Grid.Column="2" Text="단가 (원)" Foreground="#EEEEEE"
-                           Opacity="0.5" FontSize="11" VerticalAlignment="Center"
-                           HorizontalAlignment="Center"/>
+                <TextBlock Grid.Column="0" Text="아이템명" Style="{StaticResource SectionHeaderLabel}" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="1" Text="수량" Style="{StaticResource SectionHeaderLabel}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                <TextBlock Grid.Column="2" Text="단가 (원)" Style="{StaticResource SectionHeaderLabel}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
             </Grid>
 
             <!-- 아이템 목록 -->
@@ -77,7 +77,9 @@
                 <ItemsControl ItemsSource="{Binding PriceItems}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Border Background="#393E46" CornerRadius="4" Margin="8,3" Padding="12,8">
+                            <Border x:Name="itemRow"
+                                    Background="{StaticResource BackgroundTertiary}"
+                                    CornerRadius="6" Margin="8,3" Padding="12,8">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
@@ -86,27 +88,31 @@
                                         <ColumnDefinition Width="36"/>
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Grid.Column="0" Text="{Binding ItemName}"
-                                               Foreground="White" FontSize="12" VerticalAlignment="Center"/>
+                                               Foreground="{StaticResource TextPrimary}" FontSize="12" VerticalAlignment="Center"/>
                                     <TextBox Grid.Column="1"
                                              Text="{Binding TotalQuantity, UpdateSourceTrigger=PropertyChanged}"
-                                             Background="#2D3139" Foreground="White" BorderThickness="0"
-                                             CaretBrush="White" FontSize="12" Padding="4"
-                                             VerticalContentAlignment="Center" HorizontalContentAlignment="Center">
+                                             Background="{StaticResource BackgroundPrimary}"
+                                             Foreground="{StaticResource TextPrimary}"
+                                             BorderThickness="0"
+                                             CaretBrush="{StaticResource TextPrimary}"
+                                             FontSize="12" Padding="4"
+                                             VerticalContentAlignment="Center"
+                                             HorizontalContentAlignment="Center">
                                         <TextBox.Resources>
-                                            <Style TargetType="Border">
-                                                <Setter Property="CornerRadius" Value="4"/>
-                                            </Style>
+                                            <Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style>
                                         </TextBox.Resources>
                                     </TextBox>
                                     <TextBox Grid.Column="2"
                                              Text="{Binding UnitPriceInput, UpdateSourceTrigger=PropertyChanged}"
-                                             Background="#2D3139" Foreground="White" BorderThickness="0"
-                                             CaretBrush="White" FontSize="12" Padding="8,4"
-                                             VerticalContentAlignment="Center" HorizontalContentAlignment="Right">
+                                             Background="{StaticResource BackgroundPrimary}"
+                                             Foreground="{StaticResource TextPrimary}"
+                                             BorderThickness="0"
+                                             CaretBrush="{StaticResource TextPrimary}"
+                                             FontSize="12" Padding="8,4"
+                                             VerticalContentAlignment="Center"
+                                             HorizontalContentAlignment="Right">
                                         <TextBox.Resources>
-                                            <Style TargetType="Border">
-                                                <Setter Property="CornerRadius" Value="4"/>
-                                            </Style>
+                                            <Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style>
                                         </TextBox.Resources>
                                     </TextBox>
                                     <Button Grid.Column="3"
@@ -114,7 +120,7 @@
                                                 RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                             CommandParameter="{Binding}"
                                             Style="{StaticResource TitleBarButton}"
-                                            Foreground="#C0392B"
+                                            Foreground="{StaticResource DangerColor}"
                                             FontSize="12" Padding="4">
                                         <iconPacks:PackIconMaterial Kind="Close"/>
                                     </Button>
@@ -134,11 +140,12 @@
                 </Grid.ColumnDefinitions>
                 <TextBox Grid.Column="0" Margin="0,0,8,0"
                          Text="{Binding NewItemName, UpdateSourceTrigger=PropertyChanged}"
-                         Background="#393E46" Foreground="White"
-                         BorderBrush="#00ADB5" BorderThickness="1"
-                         CaretBrush="White" Padding="6,4" FontSize="12">
+                         Background="{StaticResource BackgroundTertiary}"
+                         Foreground="{StaticResource TextPrimary}"
+                         BorderBrush="{StaticResource AccentColor}" BorderThickness="1"
+                         CaretBrush="{StaticResource TextPrimary}" Padding="8,6" FontSize="12">
                     <TextBox.Resources>
-                        <Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style>
+                        <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
                     </TextBox.Resources>
                     <TextBox.InputBindings>
                         <KeyBinding Key="Return" Command="{Binding AddItemCommand}"/>
@@ -146,12 +153,13 @@
                 </TextBox>
                 <TextBox Grid.Column="1" Margin="0,0,8,0"
                          Text="{Binding NewItemQuantity, UpdateSourceTrigger=PropertyChanged}"
-                         Background="#393E46" Foreground="White"
-                         BorderBrush="#00ADB5" BorderThickness="1"
-                         CaretBrush="White" Padding="6,4" FontSize="12"
+                         Background="{StaticResource BackgroundTertiary}"
+                         Foreground="{StaticResource TextPrimary}"
+                         BorderBrush="{StaticResource AccentColor}" BorderThickness="1"
+                         CaretBrush="{StaticResource TextPrimary}" Padding="6,6" FontSize="12"
                          HorizontalContentAlignment="Center">
                     <TextBox.Resources>
-                        <Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style>
+                        <Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style>
                     </TextBox.Resources>
                 </TextBox>
                 <Button Grid.Column="2" Style="{StaticResource PrimaryButton}"
@@ -164,9 +172,10 @@
             </Grid>
 
             <!-- 계산하기 버튼 -->
-            <Border Grid.Row="5" Background="#393E46" CornerRadius="0,0,10,10">
+            <Border Grid.Row="5" Background="{StaticResource BackgroundTertiary}" CornerRadius="0,0,12,12"
+                    BorderBrush="{StaticResource SeparatorColor}" BorderThickness="0,1,0,0">
                 <Button Style="{StaticResource PrimaryButton}"
-                        Width="160" Height="34"
+                        Width="160" Height="36"
                         FontSize="13"
                         HorizontalAlignment="Center" VerticalAlignment="Center"
                         Click="CalculateButton_Click">

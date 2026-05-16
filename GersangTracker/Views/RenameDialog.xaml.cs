@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Windows;
@@ -26,12 +26,13 @@ namespace GersangTracker.Views
             NameInput.Focus();
         }
 
+        private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) => DragMove();
+
         private void ConfirmButton_Click(object sender, RoutedEventArgs e)
         {
             if (string.IsNullOrWhiteSpace(NameInput.Text)) return;
             DialogResult = true;
         }
-           
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {

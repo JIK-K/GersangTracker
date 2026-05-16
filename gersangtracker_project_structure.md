@@ -54,3 +54,68 @@ MVVM 패턴을 철저히 분리하여 설계된 아키텍처를 가집니다.
 ## 8. Links (관련 링크)
 - **Releases**: [GersangTracker Releases](https://github.com/JIK-K/GersangTracker/releases)
 - **Wiki**: [GersangTracker Wiki](https://github.com/JIK-K/GersangTracker/wiki)
+
+---
+
+## 9. UI/Design Changelog (디자인 변경 이력)
+
+### v1.0.3 — 디자인 개선 (2026-05-16)
+
+#### 9-1. 전역 디자인 시스템 강화 (`App.xaml`)
+- **새 색상 토큰 추가**
+  - `BackgroundQuaternary` (`#333848`): SecondaryButton hover 전용 배경
+  - `GlassOverlay` (`#0AFFFFFF`): 리스트 행 hover 오버레이
+  - `SuccessGradient`: 초록 계열 그라디언트 (향후 사용 대비)
+- **`SecondaryButton` hover 버그 수정**: 기존에는 hover 시 색상이 동일하여 반응이 없었음. `BackgroundQuaternary`로 교체하여 실질적인 피드백 제공
+- **새 공유 스타일 추가**
+  - `ModernTextBox`: CornerRadius 6, 포커스 시 Accent 테두리 활성화
+  - `SectionHeaderLabel`: 섹션 제목용 TextBlock (TextSecondary, 11pt Bold)
+  - `PanelTitle`: 패널 내부 제목용 TextBlock (TextPrimary, 11pt Bold)
+- **`CardHoverShadow` Effect 정의** (`App.xaml`): 청록 그림자 Effect 리소스를 선언만 해둔 상태. 실제 `MainWindow`의 카드 hover에는 DataTemplate 내 인라인 `DropShadowEffect` (`x:Name="cardShadow"`)로 직접 구현되어 있으며, 트리거에서 해당 인스턴스의 Color/Opacity/BlurRadius를 동적으로 변경하는 방식으로 동작함
+- **스크롤바 슬림화**: Width 8px → 6px, thumb 색상 반투명 흰색으로 세련화
+
+#### 9-2. MainWindow — 카드 & 사이드바 개선
+- **몬스터 카드 hover 효과**: 마우스오버 시 배경색이 `BackgroundTertiary`로 전환되고 청록 그림자 적용
+- **카드 헤더 아이콘 장식**: 헤더 우측에 반투명 Sword 아이콘 추가
+- **사이드바 하단 카운터 카드**: `Monsters.Count`를 실시간으로 표시하는 통계 카드 추가
+- **콘텐츠 헤더 개선**: 하단 separator 라인 추가, 우측에 몬스터 개수 표시
+- **텍스트박스**: 인라인 스타일 → `ModernTextBox` 전역 스타일로 교체
+
+#### 9-3. HuntingWindow — 색상 통일 및 헤더 재디자인
+- **색상 통일**: 하드코딩된 `#222831`, `#393E46`, `#2D3139`, `#EEEEEE` 전부 전역 리소스(`BackgroundSecondary`, `BackgroundTertiary`, `BackgroundPrimary`, `TextPrimary`)로 교체
+- **헤더 재디자인**: 단순 Dark 배경 → `AccentGradient` 그라디언트 배경으로 변경
+- **경과 시간 배지**: 우측 상단에 반투명 배지 형태로 표시, 가독성 향상
+- **섹션 헤더 아이콘**: 드랍 로그 / 아이템 합산 섹션에 아이콘 추가
+- **하단 버튼 영역**: separator 라인 추가
+
+#### 9-4. PriceWindow — 색상 통일 및 UI 정리
+- **색상 통일**: 전역 리소스로 교체
+- **몬스터명 배지**: 헤더 우측에 `BackgroundPrimary` 배경 배지로 표시
+- **컬럼 헤더**: `Opacity` 직접 지정 방식 → `SectionHeaderLabel` 스타일로 통일
+- **하단 버튼 영역**: separator 라인 추가
+
+#### 9-5. ResultWindow — 수익 요약 카드 재디자인
+- **색상 통일**: 전역 리소스로 교체
+- **수익 요약 패널 재디자인**: 기존 3행 그리드 → 좌우 분할 카드 레이아웃
+  - 좌측: 총 수익 / 사냥 시간 (스택 형태)
+  - 우측: 시간당 수익을 `AccentGradient` 배경 하이라이트 카드로 강조, TrendingUp 아이콘 추가
+  - 중간에 `SeparatorColor` Divider 라인 삽입
+- **헤더**: 몬스터명 배지 추가
+
+#### 9-6. SessionWindow — hover 인터랙션
+- **세션 행 hover**: `GlassOverlay` 반투명 배경 overlay 적용
+- **몬스터명 배지**: 헤더 우측 배지 형태로 표시
+- **컬럼 헤더**: `SectionHeaderLabel` 스타일 통일
+
+#### 9-7. MonsterItemDialog — 커스텀 타이틀바 전환
+- **OS 기본 창 → 커스텀 창**: `AnimatedWindowStyle` 적용, 커스텀 타이틀바 추가 (다른 창과 동일한 패턴)
+- **버튼**: 인라인 스타일 → `PrimaryButton`, `SecondaryButton` 전역 스타일로 교체
+- **TextBox**: `ModernTextBox` 스타일 적용
+- **아이템 행**: hover 시 `GlassOverlay` 효과 추가
+- **Code-behind**: `TitleBar_MouseLeftButtonDown` 드래그 핸들러 추가
+
+#### 9-8. RenameDialog — 커스텀 타이틀바 전환
+- **OS 기본 창 → 커스텀 창**: `AnimatedWindowStyle` 적용, 커스텀 타이틀바 추가
+- **버튼**: 인라인 스타일 → `SecondaryButton` / `PrimaryButton` 전역 스타일로 교체
+- **TextBox**: `ModernTextBox` 스타일 적용
+- **Code-behind**: `TitleBar_MouseLeftButtonDown` 드래그 핸들러 추가

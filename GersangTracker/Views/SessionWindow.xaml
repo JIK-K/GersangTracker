@@ -14,8 +14,8 @@
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="40"/>
-                <RowDefinition Height="50"/>
-                <RowDefinition Height="36"/>
+                <RowDefinition Height="56"/>
+                <RowDefinition Height="34"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
@@ -24,16 +24,18 @@
                     MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
                 <Grid Margin="16,0,8,0">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <Ellipse Width="8" Height="8" Fill="#00ADB5" Margin="0,0,8,0"/>
-                        <TextBlock Text="세션 목록" Foreground="White" FontSize="13"
+                        <Ellipse Width="8" Height="8" Fill="{StaticResource AccentColor}" Margin="0,0,8,0"/>
+                        <TextBlock Text="세션 목록" Foreground="{StaticResource TextPrimary}" FontSize="13"
                                    FontWeight="Bold" VerticalAlignment="Center"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                         <Button Style="{StaticResource TitleBarButton}" Click="MinimizeButton_Click">
-                            <Path Data="M 8,12 L 24,12" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                            <Path Data="M 8,12 L 24,12" Stroke="{StaticResource TextSecondary}" StrokeThickness="1.5"
+                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
                         </Button>
                         <Button Style="{StaticResource CloseButton}" Click="CloseButton_Click">
-                            <Path Data="M 8,8 L 22,22 M 22,8 L 8,22" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                            <Path Data="M 8,8 L 22,22 M 22,8 L 8,22" Stroke="{StaticResource TextSecondary}" StrokeThickness="1.5"
+                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
                         </Button>
                     </StackPanel>
                 </Grid>
@@ -44,9 +46,12 @@
                 <Grid Margin="16,0">
                     <TextBlock Text="세션 목록" Foreground="{StaticResource TextPrimary}" FontSize="15"
                                FontWeight="Bold" VerticalAlignment="Center"/>
-                    <TextBlock Text="{Binding MonsterName}" Foreground="{StaticResource AccentColor}"
-                               FontSize="14" FontWeight="Bold"
-                               VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                    <Border HorizontalAlignment="Right" VerticalAlignment="Center"
+                            Background="{StaticResource BackgroundTertiary}"
+                            CornerRadius="5" Padding="10,4">
+                        <TextBlock Text="{Binding MonsterName}" Foreground="{StaticResource AccentColor}"
+                                   FontSize="14" FontWeight="Bold"/>
+                    </Border>
                 </Grid>
             </Border>
 
@@ -58,58 +63,63 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="60"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Text="날짜" Foreground="{StaticResource TextSecondary}"
-                           FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                <TextBlock Grid.Column="1" Text="사냥 시간" Foreground="{StaticResource TextSecondary}"
-                           FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"
-                           HorizontalAlignment="Center"/>
-                <TextBlock Grid.Column="2" Text="총 수익" Foreground="{StaticResource TextSecondary}"
-                           FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"
-                           HorizontalAlignment="Right"/>
+                <TextBlock Grid.Column="0" Text="날짜" Style="{StaticResource SectionHeaderLabel}" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="1" Text="사냥 시간" Style="{StaticResource SectionHeaderLabel}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                <TextBlock Grid.Column="2" Text="총 수익" Style="{StaticResource SectionHeaderLabel}" VerticalAlignment="Center" HorizontalAlignment="Right"/>
             </Grid>
 
             <!-- 세션 목록 -->
             <ScrollViewer Grid.Row="3" Margin="8,0,8,8">
                 <ItemsControl ItemsSource="{Binding Sessions}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Border Background="Transparent" Margin="8,0" Padding="12,12"
-                                    BorderBrush="{StaticResource SeparatorColor}" BorderThickness="0,0,0,1"
-                                    Cursor="Hand" MouseLeftButtonDown="Session_MouseLeftButtonDown">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="160"/>
-                                        <ColumnDefinition Width="100"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="60"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0"
-                                               Text="{Binding StartedAt, StringFormat={}{0:yyyy-MM-dd HH:mm}}"
-                                               Foreground="{StaticResource TextPrimary}" FontSize="13" VerticalAlignment="Center"/>
-                                    <TextBlock Grid.Column="1" Text="{Binding HuntingTimeDisplay}"
-                                               Foreground="{StaticResource TextSecondary}" FontSize="13"
-                                               VerticalAlignment="Center" HorizontalAlignment="Center"/>
-                                    <TextBlock Grid.Column="2"
-                                               Text="{Binding TotalProfit, StringFormat={}{0:N0} 원}"
-                                               Foreground="{StaticResource AccentColor}" FontSize="13" FontWeight="Bold"
-                                               VerticalAlignment="Center" HorizontalAlignment="Right"/>
-                                    <Button Grid.Column="3"
-                                            Style="{StaticResource DangerButton}"
-                                            FontSize="11" Padding="8,4" HorizontalAlignment="Center"
-                                            Command="{Binding DataContext.DeleteSessionCommand,
-                                                RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                            CommandParameter="{Binding}">
-                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                            <iconPacks:PackIconMaterial Kind="Delete" Width="10" Height="10" Margin="0,0,4,0"/>
-                                            <TextBlock Text="삭제"/>
-                                        </StackPanel>
-                                    </Button>
-                                </Grid>
-                            </Border>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </ScrollViewer>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border x:Name="sessionRow"
+                                        Background="Transparent"
+                                        Margin="8,0" Padding="12,12"
+                                        BorderBrush="{StaticResource SeparatorColor}"
+                                        BorderThickness="0,0,0,1"
+                                        Cursor="Hand"
+                                        MouseLeftButtonDown="Session_MouseLeftButtonDown"
+                                        CornerRadius="6">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="160"/>
+                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="60"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                                                   Text="{Binding StartedAt, StringFormat={}{0:yyyy-MM-dd HH:mm}}"
+                                                   Foreground="{StaticResource TextPrimary}" FontSize="13" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding HuntingTimeDisplay}"
+                                                   Foreground="{StaticResource TextSecondary}" FontSize="13"
+                                                   VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                        <TextBlock Grid.Column="2"
+                                                   Text="{Binding TotalProfit, StringFormat={}{0:N0} 원}"
+                                                   Foreground="{StaticResource AccentColor}" FontSize="13" FontWeight="Bold"
+                                                   VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                                        <Button Grid.Column="3"
+                                                Style="{StaticResource DangerButton}"
+                                                FontSize="11" Padding="8,4" HorizontalAlignment="Center"
+                                                Command="{Binding DataContext.DeleteSessionCommand,
+                                                    RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                CommandParameter="{Binding}">
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <iconPacks:PackIconMaterial Kind="Delete" Width="10" Height="10" Margin="0,0,4,0"/>
+                                                <TextBlock Text="삭제"/>
+                                            </StackPanel>
+                                        </Button>
+                                    </Grid>
+                                </Border>
+                                <DataTemplate.Triggers>
+                                    <Trigger SourceName="sessionRow" Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="sessionRow" Property="Background" Value="{StaticResource GlassOverlay}"/>
+                                    </Trigger>
+                                </DataTemplate.Triggers>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
         </Grid>
     </Border>
 </Window>

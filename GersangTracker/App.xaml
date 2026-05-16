@@ -4,13 +4,18 @@
              xmlns:local="clr-namespace:GersangTracker"
              xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks">
     <Application.Resources>
-        <!-- Colors -->
-        <SolidColorBrush x:Key="BackgroundPrimary" Color="#16181D"/>
-        <SolidColorBrush x:Key="BackgroundSecondary" Color="#20242D"/>
-        <SolidColorBrush x:Key="BackgroundTertiary" Color="#2A2F3A"/>
-        
-        <SolidColorBrush x:Key="AccentColor" Color="#00ADB5"/>
-        
+        <!-- ================================================ -->
+        <!--  COLOR TOKENS                                    -->
+        <!-- ================================================ -->
+        <SolidColorBrush x:Key="BackgroundPrimary"    Color="#16181D"/>
+        <SolidColorBrush x:Key="BackgroundSecondary"  Color="#20242D"/>
+        <SolidColorBrush x:Key="BackgroundTertiary"   Color="#2A2F3A"/>
+        <SolidColorBrush x:Key="BackgroundQuaternary" Color="#333848"/>
+
+        <SolidColorBrush x:Key="AccentColor"  Color="#00ADB5"/>
+        <SolidColorBrush x:Key="DangerColor"  Color="#FF4B2B"/>
+        <SolidColorBrush x:Key="SuccessColor" Color="#2ECC71"/>
+
         <LinearGradientBrush x:Key="AccentGradient" StartPoint="0,0" EndPoint="1,1">
             <GradientStop Color="#00ADB5" Offset="0"/>
             <GradientStop Color="#006CD1" Offset="1"/>
@@ -19,7 +24,7 @@
             <GradientStop Color="#00C1CA" Offset="0"/>
             <GradientStop Color="#007DEB" Offset="1"/>
         </LinearGradientBrush>
-        
+
         <LinearGradientBrush x:Key="DangerGradient" StartPoint="0,0" EndPoint="1,1">
             <GradientStop Color="#FF416C" Offset="0"/>
             <GradientStop Color="#FF4B2B" Offset="1"/>
@@ -29,61 +34,86 @@
             <GradientStop Color="#FF6448" Offset="1"/>
         </LinearGradientBrush>
 
-        <SolidColorBrush x:Key="DangerColor" Color="#FF4B2B"/>
-        
-        <SolidColorBrush x:Key="TextPrimary" Color="#F0F2F5"/>
+        <LinearGradientBrush x:Key="SuccessGradient" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#2ECC71" Offset="0"/>
+            <GradientStop Color="#00B894" Offset="1"/>
+        </LinearGradientBrush>
+
+        <SolidColorBrush x:Key="TextPrimary"   Color="#F0F2F5"/>
         <SolidColorBrush x:Key="TextSecondary" Color="#8B95A5"/>
-        
         <SolidColorBrush x:Key="SeparatorColor" Color="#1AFFFFFF"/>
+        <SolidColorBrush x:Key="GlassOverlay"  Color="#0AFFFFFF"/>
 
-        <!-- Effects -->
-        <DropShadowEffect x:Key="SoftDropShadow" Color="Black" Opacity="0.25" BlurRadius="30" ShadowDepth="4"/>
+        <!-- ================================================ -->
+        <!--  EFFECTS                                         -->
+        <!-- ================================================ -->
+        <DropShadowEffect x:Key="SoftDropShadow"  Color="Black" Opacity="0.25" BlurRadius="30" ShadowDepth="4"/>
+        <DropShadowEffect x:Key="CardHoverShadow" Color="#00ADB5" Opacity="0.18" BlurRadius="20" ShadowDepth="0"/>
 
-        <!-- Base Window Fade-In Animation -->
+        <!-- ================================================ -->
+        <!--  WINDOW STYLE                                    -->
+        <!-- ================================================ -->
         <Style TargetType="Window" x:Key="AnimatedWindowStyle">
-            <Setter Property="WindowStyle" Value="None"/>
+            <Setter Property="WindowStyle"        Value="None"/>
             <Setter Property="AllowsTransparency" Value="True"/>
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="ResizeMode" Value="CanResize"/>
+            <Setter Property="Background"         Value="Transparent"/>
+            <Setter Property="ResizeMode"         Value="CanResize"/>
         </Style>
 
+        <!-- ================================================ -->
+        <!--  BUTTON STYLES                                   -->
+        <!-- ================================================ -->
+
+        <!-- PrimaryButton -->
         <Style x:Key="PrimaryButton" TargetType="Button">
-            <Setter Property="Background" Value="{StaticResource AccentGradient}"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="14,8"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="FontSize" Value="13"/>
-            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Background"       Value="{StaticResource AccentGradient}"/>
+            <Setter Property="Foreground"       Value="White"/>
+            <Setter Property="BorderThickness"  Value="0"/>
+            <Setter Property="Padding"          Value="14,8"/>
+            <Setter Property="Cursor"           Value="Hand"/>
+            <Setter Property="FontSize"         Value="13"/>
+            <Setter Property="FontWeight"       Value="Bold"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                        <Border x:Name="border"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="8"
+                                Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="border" Property="Background" Value="{StaticResource AccentHoverGradient}"/>
                             </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Opacity" Value="0.85"/>
+                            </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
 
-        <!-- Dark Secondary Button -->
+        <!-- SecondaryButton — hover 효과 수정 -->
         <Style x:Key="SecondaryButton" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
             <Setter Property="Background" Value="{StaticResource BackgroundTertiary}"/>
             <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                        <Border x:Name="border"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="8"
+                                Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="{StaticResource BackgroundTertiary}"/>
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource BackgroundQuaternary}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Opacity" Value="0.8"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -91,38 +121,45 @@
             </Setter>
         </Style>
 
-        <!-- Sidebar Button -->
+        <!-- SidebarButton -->
         <Style x:Key="SidebarButton" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
             <Setter Property="HorizontalAlignment" Value="Stretch"/>
-            <Setter Property="Padding" Value="12,10"/>
+            <Setter Property="Padding"             Value="12,10"/>
         </Style>
 
+        <!-- DangerButton -->
         <Style x:Key="DangerButton" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
             <Setter Property="Background" Value="{StaticResource DangerGradient}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                        <Border x:Name="border"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="8"
+                                Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="border" Property="Background" Value="{StaticResource DangerHoverGradient}"/>
                             </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Opacity" Value="0.85"/>
+                            </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
 
-        <!-- TitleBar Button -->
+        <!-- TitleBarButton -->
         <Style x:Key="TitleBarButton" TargetType="Button">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="Background"      Value="Transparent"/>
+            <Setter Property="Foreground"      Value="{StaticResource TextPrimary}"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Width" Value="40"/>
-            <Setter Property="Height" Value="32"/>
-            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Width"           Value="40"/>
+            <Setter Property="Height"          Value="32"/>
+            <Setter Property="Cursor"          Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -131,7 +168,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="bg" Property="Background" Value="{StaticResource BackgroundSecondary}"/>
+                                <Setter TargetName="bg" Property="Background" Value="{StaticResource BackgroundTertiary}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -139,6 +176,7 @@
             </Setter>
         </Style>
 
+        <!-- CloseButton -->
         <Style x:Key="CloseButton" TargetType="Button" BasedOn="{StaticResource TitleBarButton}">
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
@@ -148,10 +186,64 @@
             </Style.Triggers>
         </Style>
 
-        <!-- Modern ScrollBar -->
+        <!-- ================================================ -->
+        <!--  TEXT STYLES                                     -->
+        <!-- ================================================ -->
+
+        <!-- 섹션 헤더 레이블 -->
+        <Style x:Key="SectionHeaderLabel" TargetType="TextBlock">
+            <Setter Property="Foreground"  Value="{StaticResource TextSecondary}"/>
+            <Setter Property="FontSize"    Value="11"/>
+            <Setter Property="FontWeight"  Value="Bold"/>
+        </Style>
+
+        <!-- 패널 내부 타이틀 -->
+        <Style x:Key="PanelTitle" TargetType="TextBlock">
+            <Setter Property="Foreground"  Value="{StaticResource TextPrimary}"/>
+            <Setter Property="FontSize"    Value="11"/>
+            <Setter Property="FontWeight"  Value="Bold"/>
+        </Style>
+
+        <!-- ================================================ -->
+        <!--  TEXTBOX STYLE                                   -->
+        <!-- ================================================ -->
+        <Style x:Key="ModernTextBox" TargetType="TextBox">
+            <Setter Property="Background"          Value="{StaticResource BackgroundPrimary}"/>
+            <Setter Property="Foreground"          Value="{StaticResource TextPrimary}"/>
+            <Setter Property="CaretBrush"          Value="{StaticResource TextPrimary}"/>
+            <Setter Property="BorderThickness"     Value="1"/>
+            <Setter Property="BorderBrush"         Value="{StaticResource BackgroundTertiary}"/>
+            <Setter Property="Padding"             Value="10,8"/>
+            <Setter Property="FontSize"            Value="13"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border x:Name="border"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6"
+                                Padding="{TemplateBinding Padding}">
+                            <ScrollViewer x:Name="PART_ContentHost"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource AccentColor}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ================================================ -->
+        <!--  SCROLLBAR STYLE                                 -->
+        <!-- ================================================ -->
         <Style TargetType="ScrollBar">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Width" Value="8"/>
+            <Setter Property="Width"      Value="6"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ScrollBar">
@@ -161,10 +253,12 @@
                                     <Thumb>
                                         <Thumb.Template>
                                             <ControlTemplate TargetType="Thumb">
-                                                <Border x:Name="thumbBorder" Background="#555555" CornerRadius="4"/>
+                                                <Border x:Name="thumbBorder"
+                                                        Background="#3AFFFFFF"
+                                                        CornerRadius="3"/>
                                                 <ControlTemplate.Triggers>
                                                     <Trigger Property="IsMouseOver" Value="True">
-                                                        <Setter TargetName="thumbBorder" Property="Background" Value="#777777"/>
+                                                        <Setter TargetName="thumbBorder" Property="Background" Value="#6AFFFFFF"/>
                                                     </Trigger>
                                                     <Trigger Property="IsDragging" Value="True">
                                                         <Setter TargetName="thumbBorder" Property="Background" Value="{StaticResource AccentColor}"/>
