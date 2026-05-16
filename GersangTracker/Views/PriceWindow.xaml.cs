@@ -1,4 +1,4 @@
-using GersangTracker.ViewModels;
+﻿using GersangTracker.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -32,7 +32,7 @@ namespace GersangTracker.Views
                 await _viewModel.LoadPreviousPricesAsync();
             }catch(FileNotFoundException ex)
             {
-                MessageBox.Show(ex.Message, "OCR 파일 없음",
+                MessageBox.Show(ex.Message, "OCR ?뚯씪 ?놁쓬",
                     MessageBoxButton.OK, MessageBoxImage.Warning);
                 Close();
             }

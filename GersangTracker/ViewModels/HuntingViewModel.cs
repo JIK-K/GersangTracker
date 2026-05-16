@@ -1,4 +1,4 @@
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GersangTracker.Models;
 using GersangTracker.Services;
@@ -12,7 +12,7 @@ namespace GersangTracker.ViewModels
         private readonly DatabaseService _databaseService;
         private readonly OcrService _ocrService;
 
-        // UI 스레드에서 동작하는 타이머 (경과시간 업데이트용)
+        // UI 스레드에서 동작하는 타이머 (경과시간 업데이트)
         private readonly DispatcherTimer _dispatcherTimer;
 
         // 사냥 시작 시간
@@ -31,10 +31,10 @@ namespace GersangTracker.ViewModels
         // 연결 상태 로그
         public ObservableCollection<string> StatusLogs { get; } = new();
 
-        // 실시간 드랍 로그 목록
+        // 실시간 드롭 로그 목록
         public ObservableCollection<DropLog> DropLogs { get; } = new();
 
-        // 아이템 합산 목록 (아이템명 → 총수량)
+        // 아이템 합산 목록 (아이템명 별 총 수량)
         public ObservableCollection<ItemSummary> ItemSummaries { get; } = new();
 
         public HuntingViewModel(Monster monster, DatabaseService databaseService, OcrService ocrService)
@@ -43,19 +43,19 @@ namespace GersangTracker.ViewModels
             _databaseService = databaseService;
             _ocrService = ocrService;
 
-            // OcrService 이벤트 구독 - 새 아이템 감지시 OnItemDropped 호출
+            // OcrService 이벤트 구독 - 새 아이템 감지 시 OnItemDropped 호출
             _ocrService.ItemDropped += OnItemDropped;
 
             // OcrService 창 감지 이벤트 구독
             _ocrService.WindowDetected += (s, detected) =>
             {
-                AddStatusLog(detected ? "거상 창 감지됨 ✔" : "거상 창을 찾을 수 없음 ✖");
+                AddStatusLog(detected ? "거상 창 감지됨" : "거상 창을 찾을 수 없음");
             };
             _ocrService.TextRecognized += (s, text) =>
             {
                 AddStatusLog($"OCR : {text}");
             };
-            _ocrService.StatusLog += (message) => 
+            _ocrService.StatusLog += (message) =>
             {
                 AddStatusLog(message);
             };
@@ -89,16 +89,16 @@ namespace GersangTracker.ViewModels
             ElapsedTime = elapsed.ToString(@"hh\:mm\:ss");
         }
 
-        // 아이템 드랍 감지시 호출
+        // 아이템 드롭 감지 시 호출
         private async void OnItemDropped(object? sender, DroppedItemEventArgs e)
         {
-            // DB에 드랍 로그 저장
+            // DB에 드롭 로그 저장
             await _databaseService.AddDropLogAsync(_sessionId, e.ItemName, e.Quantity);
 
             // UI 스레드에서 목록 업데이트
             App.Current.Dispatcher.Invoke(() =>
             {
-                // 실시간 드랍 로그 추가
+                // 실시간 드롭 로그 추가
                 DropLogs.Insert(0, new DropLog
                 {
                     ItemName = e.ItemName,

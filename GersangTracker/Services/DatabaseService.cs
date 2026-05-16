@@ -1,4 +1,4 @@
-using GersangTracker.Data;
+﻿using GersangTracker.Data;
 using GersangTracker.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -93,7 +93,7 @@ namespace GersangTracker.Services
             await db.SaveChangesAsync();
         }
 
-        // [DropLog] - [Create] 드랍 로그 추가
+        // [DropLog] - [Create] 드롭 로그 추가
         public async Task AddDropLogAsync(int sessionId, string itemName, int quantity)
         {
             try
@@ -115,7 +115,7 @@ namespace GersangTracker.Services
             }
         }
 
-        // [DropLog] - [Read] 세션별 드랍 로그 조회
+        // [DropLog] - [Read] 세션별 드롭 로그 조회
         public async Task<List<DropLog>> GetDropLogsBySessionAsync(int sessionId)
         {
             using var db = new AppDbContext();
@@ -159,7 +159,7 @@ namespace GersangTracker.Services
             await db.SaveChangesAsync();
         }
 
-        // DatabaseService.cs 에 추가
+        // DatabaseService.cs에 추가
 
         // 몬스터의 아이템 목록 조회
         public async Task<List<MonsterItem>> GetMonsterItemsAsync(int monsterId)
@@ -211,7 +211,7 @@ namespace GersangTracker.Services
             }
         }
 
-        // 세션의 드랍 로그 전체 동기화 (수량 수정 및 신규 추가 대응)
+        // 세션의 드롭 로그 전체 동기화 (수량 수정 및 신규 추가 저장)
         public async Task SyncDropLogsAsync(int sessionId, List<PriceItemSummary> items)
         {
             using var db = new AppDbContext();
@@ -227,7 +227,7 @@ namespace GersangTracker.Services
                 if (logsOfItem.Any())
                 {
                     // 기존 로그가 있는 경우: 모두 삭제 후 사용자가 수정한 수량으로 통합된 하나의 로그 생성
-                    // (개별 드랍 시간보다는 전체 통계의 정확성이 우선되는 화면이므로 병합 처리)
+                    // (개별 드롭 시간보다는 전체 통계의 정확성이 우선되는 화면이므로 병합 처리)
                     var firstDroppedAt = logsOfItem.OrderBy(l => l.DroppedAt).First().DroppedAt;
                     db.DropLogs.RemoveRange(logsOfItem);
 
@@ -270,7 +270,7 @@ namespace GersangTracker.Services
     }
 
 
-    // 통계용 모델 (Service 내부용)
+    // 통계용 모델 (Service 내부)
     public class PriceItemSummary
     {
         public string ItemName { get; set; } = string.Empty;

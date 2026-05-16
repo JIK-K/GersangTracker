@@ -1,4 +1,4 @@
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GersangTracker.Models;
 using GersangTracker.Services;
@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 
 namespace GersangTracker.ViewModels
 {
-    // 가격 입력 화면 표시용 임시 모델
+    // 가격 입력 화면 표시용 임시 모델 (뷰모델 내 헬퍼 모델)
     public partial class PriceItem : ObservableObject
     {
         public string ItemName { get; set; } = string.Empty;
@@ -16,7 +16,7 @@ namespace GersangTracker.ViewModels
         [ObservableProperty]
         private int _totalQuantity;
 
-        // 단가 입력값 - 변경시 UI 자동 반영
+        // 단가 입력값 - 변경 시 UI 자동 반영
         [ObservableProperty]
         private string _unitPriceInput = string.Empty;
 
@@ -106,7 +106,7 @@ namespace GersangTracker.ViewModels
             PriceItems.Remove(item);
         }
 
-        // 계산하기
+        // 계산하기 (정산 및 저장)
         [RelayCommand]
         private async Task CalculateAsync()
         {
@@ -117,7 +117,7 @@ namespace GersangTracker.ViewModels
                     await _databaseService.SaveItemPriceAsync(_monster.Id, item.ItemName, item.UnitPrice);
             }
 
-            // 2. 현재 세션의 드랍 로그 동기화 (수량, 단가, 신규 아이템)
+            // 2. 현재 세션의 드롭 로그 동기화 (수량, 단가, 신규 아이템 반영)
             var syncItems = PriceItems.Select(p => new PriceItemSummary
             {
                 ItemName = p.ItemName,
@@ -127,13 +127,12 @@ namespace GersangTracker.ViewModels
 
             await _databaseService.SyncDropLogsAsync(_sessionId, syncItems);
 
-            // 3. 세션 정보 업데이트 (총 수익 및 종료 시간)
+            // 3. 세션 정보 업데이트 (총수익 및 종료 시간)
             long totalProfit = PriceItems.Sum(p => p.Total);
             await _databaseService.UpdateSessionAsync(_sessionId, DateTime.Now, totalProfit);
         }
 
-
-        // 총 수익
+        // 총수익
         public long TotalProfit => PriceItems.Sum(p => p.Total);
 
         // 세션 조회
@@ -143,7 +142,7 @@ namespace GersangTracker.ViewModels
             return session.First(s => s.Id == _sessionId);
         }
 
-        // 드랍 로그 조회
+        // 드롭 로그 조회
         public async Task<List<DropLog>> GetDropLogsAsync()
         {
             return await _databaseService.GetDropLogsBySessionAsync(_sessionId);

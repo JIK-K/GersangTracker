@@ -1,4 +1,4 @@
-<!-- Views/MonsterItemDialog.xaml -->
+﻿<!-- Views/MonsterItemDialog.xaml -->
 <Window x:Class="GersangTracker.Views.MonsterItemDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -66,14 +66,13 @@
                     </TextBox>
                     <Button Grid.Column="1" Style="{StaticResource PrimaryButton}"
                             Command="{Binding AddItemCommand}">
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <iconPacks:PackIconMaterial Kind="Plus" Width="12" Height="12" Margin="0,0,4,0"/>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
                             <TextBlock Text="추가"/>
                         </StackPanel>
                     </Button>
                 </Grid>
             </Grid>
-
+ 
             <!-- 아이템 목록 -->
             <Border Grid.Row="2" Background="{StaticResource BackgroundPrimary}"
                     Margin="16,0,16,0" CornerRadius="8">

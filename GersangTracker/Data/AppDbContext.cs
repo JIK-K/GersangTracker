@@ -1,4 +1,4 @@
-using GersangTracker.Models;
+﻿using GersangTracker.Models;
 using Microsoft.EntityFrameworkCore;
 using System.IO;
 
@@ -11,9 +11,10 @@ namespace GersangTracker.Data
         public DbSet<DropLog> DropLogs { get; set; }
         public DbSet<ItemPrice> ItemPrices { get; set; }
         public DbSet<MonsterItem> MonsterItems { get; set; }
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            //경로-AppData\Roaming\GersangTracker
+            // 경로 - AppData\Roaming\GersangTracker
             string appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
             string dbFolder = Path.Combine(appDataPath, "GersangTracker");
 
@@ -31,6 +32,7 @@ namespace GersangTracker.Data
                 entity.Property(e => e.Name).IsRequired();
                 entity.Property(e => e.CreatedAt).IsRequired();
             });
+
             // (몬스터 1 : 세션 N)
             modelBuilder.Entity<Session>(entity =>
             {
@@ -40,7 +42,7 @@ namespace GersangTracker.Data
                       .HasForeignKey(e => e.MonsterId);
             });
 
-            //  (세션 1 : 드랍로그 N)
+            // (세션 1 : 드롭로그 N)
             modelBuilder.Entity<DropLog>(entity =>
             {
                 entity.HasKey(e => e.Id);
@@ -49,7 +51,7 @@ namespace GersangTracker.Data
                       .HasForeignKey(e => e.SessionId);
             });
 
-            //  (몬스터 1 : 아이템단가 N)
+            // (몬스터 1 : 아이템단가 N)
             modelBuilder.Entity<ItemPrice>(entity =>
             {
                 entity.HasKey(e => e.Id);
@@ -60,7 +62,6 @@ namespace GersangTracker.Data
 
             modelBuilder.Entity<MonsterItem>()
                 .ToTable("monster_items");
-
         }
     }
 }

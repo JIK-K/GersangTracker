@@ -1,4 +1,4 @@
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GersangTracker.Models;
 using GersangTracker.Services;
@@ -19,7 +19,7 @@ namespace GersangTracker.ViewModels
         // 아이템 합산 목록 (결과 표시용)
         public List<PriceItem> PriceItems { get; }
 
-        // 총 수익
+        // 총수익
         public long TotalProfit => _session.TotalProfit;
 
         // 사냥 시간
@@ -32,7 +32,7 @@ namespace GersangTracker.ViewModels
             }
         }
 
-        // 시간당 수익
+        // 시간당 수익 (시급)
         public long ProfitPerHour
         {
             get

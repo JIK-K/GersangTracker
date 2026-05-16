@@ -1,4 +1,4 @@
-<Application x:Class="GersangTracker.App"
+﻿<Application x:Class="GersangTracker.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:GersangTracker"
@@ -208,35 +208,47 @@
         <!--  TEXTBOX STYLE                                   -->
         <!-- ================================================ -->
         <Style x:Key="ModernTextBox" TargetType="TextBox">
+            <!-- 배경을 조금 더 밝게 변경하여 입력창임을 명확히 함 -->
             <Setter Property="Background"          Value="{StaticResource BackgroundPrimary}"/>
+            <!-- 글자색을 확실한 흰색 계열로 설정 -->
             <Setter Property="Foreground"          Value="{StaticResource TextPrimary}"/>
             <Setter Property="CaretBrush"          Value="{StaticResource TextPrimary}"/>
             <Setter Property="BorderThickness"     Value="1"/>
-            <Setter Property="BorderBrush"         Value="{StaticResource BackgroundTertiary}"/>
-            <Setter Property="Padding"             Value="10,8"/>
-            <Setter Property="FontSize"            Value="13"/>
+            <Setter Property="BorderBrush"         Value="{StaticResource BackgroundQuaternary}"/>
+            <Setter Property="Padding"             Value="4,0"/>
+            <Setter Property="FontSize"            Value="15"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="TextBox">
                         <Border x:Name="border"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="6"
-                                Padding="{TemplateBinding Padding}">
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="8"
+                        Padding="{TemplateBinding Padding}">
+                            <!-- 텍스트가 표시되는 영역 -->
                             <ScrollViewer x:Name="PART_ContentHost"
-                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                                  Focusable="False"
+                                  HorizontalScrollBarVisibility="Hidden"
+                                  VerticalScrollBarVisibility="Hidden"
+                                  VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
                         </Border>
                         <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource TextSecondary}"/>
+                            </Trigger>
                             <Trigger Property="IsFocused" Value="True">
+                                <!-- 포커스 시 테두리를 민트색(AccentColor)으로 강조 -->
                                 <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource AccentColor}"/>
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource BackgroundSecondary}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
+
 
         <!-- ================================================ -->
         <!--  SCROLLBAR STYLE                                 -->

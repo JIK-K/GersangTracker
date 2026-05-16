@@ -1,4 +1,4 @@
-using OpenCvSharp;
+﻿using OpenCvSharp;
 using OpenCvSharp.Extensions;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -52,23 +52,23 @@ namespace GersangTracker.Services
         struct RECT { public int Left, Top, Right, Bottom; }
         #endregion
 
-        // 새 아이템 드랍 감지시 외부에 알려주는 이벤트
+        // 새 아이템 드롭 감지 시 외부로 알려주는 이벤트
         public event EventHandler<DroppedItemEventArgs>? ItemDropped;
 
-        // 거상 창 감지 상태 변경시 알림
+        // 거상 창 감지 상태 변경 시 알림
         public event EventHandler<bool>? WindowDetected;
 
         // OCR 텍스트 인식 결과 알림 (디버그용)
         public event EventHandler<string>? TextRecognized;
         public event Action<string>? StatusLog;
 
-        // 정규식 - 마지막 [] 안을 아이템명으로 파싱 (중첩 대괄호 대응)
+        // 정규식 - 마지막 [] 안을 아이템명으로 파싱 (중복 대괄호 대응)
         private readonly Regex _dropRegex = new(@"\[.+?\].*\[([^\]]+)\]");
 
-        // 이전 캡처 줄 목록 - 신규 드랍 판별에 사용
+        // 이전 캡처 줄 목록 - 신규 드롭 판별에 사용
         private List<string> _prevLines = new();
 
-        // 직전 캡처에서 확정된 드랍 줄 목록 - 중복 방지용
+        // 직전 캡처에서 확정된 드롭 줄 목록 - 중복 방지용
         private List<string> _lastConfirmedLines = new();
 
         // 1초마다 캡처를 실행하는 타이머
@@ -105,7 +105,7 @@ namespace GersangTracker.Services
                     "한국어 OCR 데이터 파일이 존재하지 않습니다.\n" +
                     $"경로: {_tessPath}\\kor.traineddata\n\n" +
                     "https://github.com/tesseract-ocr/tessdata 에서\n" +
-                    "kor.traineddata 파일을 다운로드하여 위 경로에 넣어주세요.");
+                    "kor.traineddata 파일을 다운로드하여 해당 경로에 넣어주세요.");
             }
 
             _timer = new System.Timers.Timer(1000);
@@ -192,7 +192,7 @@ namespace GersangTracker.Services
                 // 3. 창 전체 캡처
                 fullCapture = CaptureWindow(hwnd, windowWidth, windowHeight);
 
-                // 4. 드랍 메시지 영역만 Crop
+                // 4. 드롭 메시지 영역만 Crop
                 Rectangle cropRect = new(_startX, _startY, _cropWidth, _cropHeight);
                 cropped = fullCapture.Clone(cropRect, fullCapture.PixelFormat);
 
@@ -204,7 +204,7 @@ namespace GersangTracker.Services
                     g.DrawImage(cropped, 0, 0, enlarged.Width, enlarged.Height);
                 }
 
-                // 6. 전처리 - 그레이스케일 → 이진화
+                // 6. 전처리 - 그레이스케일 + 이진화
                 mat = BitmapConverter.ToMat(enlarged);
                 gray = new Mat();
                 binary = new Mat();
@@ -231,18 +231,18 @@ namespace GersangTracker.Services
                 using var page = engine.Process(img);
                 string text = page.GetText().Trim();
 
-                // 8. 텍스트 후처리
+                // 8. 텍스트 전처리
                 // 글자 사이 공백 제거
                 text = Regex.Replace(text, @"(?<=\S) (?=\S)", "");
 
                 // 대괄호 유사 문자 통일
                 text = text.Replace("{", "[").Replace("}", "]")
-                           .Replace("【", "[").Replace("】", "]")
-                           .Replace("〔", "[").Replace("〕", "]")
                            .Replace("「", "[").Replace("」", "]")
-                           .Replace("｢", "[").Replace("｣", "]");
+                           .Replace("『", "[").Replace("』", "]")
+                           .Replace("【", "[").Replace("】", "]")
+                           .Replace("〔", "[").Replace("〕", "]");
 
-                // @Debug - OCR 원문을 구분선과 함께 별도 블록으로 기록
+                // @Debug - OCR 원문은 구분선과 함께 별도 블록으로 기록
                 if (!string.IsNullOrWhiteSpace(text))
                 {
                     _ocrLogs.Add($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [OCR]\n{text}\n{new string('-', 30)}");
@@ -259,7 +259,7 @@ namespace GersangTracker.Services
                 // 10. 이전 캡처와 비교해서 신규 줄만 추출
                 List<string> newLines = GetNewLines(_prevLines, currentLines);
 
-                // 11. 신규 줄에서 아이템 파싱 후 이벤트 발생
+                // 11. 신규 줄에서 아이템 파싱 및 이벤트 발생
                 List<string> confirmedLines = new();
 
                 foreach (var line in newLines)
@@ -299,7 +299,7 @@ namespace GersangTracker.Services
                         int quantity = qtyMatch.Success ? int.Parse(qtyMatch.Groups[1].Value) : 1;
 
                         confirmedLines.Add(line);
-                        Log($"[드랍확정] {itemName} x{quantity}");
+                        Log($"[드롭확정] {itemName} x{quantity}");
 
                         ItemDropped?.Invoke(this, new DroppedItemEventArgs
                         {
@@ -310,7 +310,7 @@ namespace GersangTracker.Services
                     }
                 }
 
-                // 확정된 드랍 줄 갱신
+                // 확정된 드롭 줄 갱신
                 _lastConfirmedLines = confirmedLines;
 
                 // 12. 현재 줄 목록을 이전 목록으로 저장
@@ -321,9 +321,10 @@ namespace GersangTracker.Services
                 Log($"[오류] {ex.Message}");
                 TextRecognized?.Invoke(this, $"오류: {ex.Message}");
             }
+            using var releaseToken = checked(new object()); // 컴파일 최적화 및 유지용 구문 무시 가능
             finally
             {
-                // 리소스 해제 - finally 에서 보장
+                // 리소스 해제 - finally 단에서 보장
                 fullCapture?.Dispose();
                 cropped?.Dispose();
                 enlarged?.Dispose();
@@ -386,7 +387,7 @@ namespace GersangTracker.Services
                     // 일정 수준(60%) 이상 유사할 때만 매칭으로 인정
                     double matchScore = sim >= 0.6 ? sim : 0;
 
-                    dp[i, j] = Math.Max(dp[i - 1, j - 1] + matchScore, 
+                    dp[i, j] = Math.Max(dp[i - 1, j - 1] + matchScore,
                                Math.Max(dp[i - 1, j], dp[i, j - 1]));
                 }
             }
@@ -462,7 +463,7 @@ namespace GersangTracker.Services
             return d[n, m];
         }
 
-        // OCR 결과 → 등록 아이템으로 매칭
+        // OCR 결과를 등록 아이템으로 매칭
         private string? MatchToTarget(string ocrResult)
         {
             if (_targetItems.Count == 0) return ocrResult;
@@ -472,12 +473,12 @@ namespace GersangTracker.Services
                 .OrderBy(x => x.dist)
                 .FirstOrDefault();
 
-            // 임계값: 글자수의 50% 또는 최대 3 중 큰 값
+            // 임계값: 글자수의 50% 또는 최대 3 글자 중 큰 값
             int threshold = Math.Max(3, (int)Math.Ceiling(ocrResult.Length * 0.5));
 
             if (best.dist <= threshold)
             {
-                Log($"[매칭] {ocrResult} → {best.target} (거리:{best.dist}/임계:{threshold})");
+                Log($"[매칭] {ocrResult} -> {best.target} (거리:{best.dist}/임계:{threshold})");
                 return best.target;
             }
 

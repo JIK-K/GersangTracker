@@ -1,4 +1,4 @@
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GersangTracker.Models;
 using GersangTracker.Services;
@@ -24,6 +24,8 @@ namespace GersangTracker.ViewModels
         public MainViewModel(DatabaseService databaseService)
         {
             _databaseService = databaseService;
+            // 앱 실행 시 목록 자동 로드
+            _ = LoadMonstersAsync();
         }
 
         [RelayCommand]
@@ -83,7 +85,7 @@ namespace GersangTracker.ViewModels
             if (items.Count == 0)
             {
                 MessageBox.Show(
-                    "드랍 아이템이 등록되어 있지 않습니다.\n아이템 관리에서 아이템을 먼저 추가해주세요.",
+                    "드롭 아이템이 등록되어 있지 않습니다.\n아이템 관리에서 아이템을 먼저 추가해주세요.",
                     "아이템 없음",
                     MessageBoxButton.OK,
                     MessageBoxImage.Warning);

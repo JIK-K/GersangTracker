@@ -1,4 +1,4 @@
-namespace GersangTracker.Models
+﻿namespace GersangTracker.Models
 {
     public class Session
     {
@@ -10,7 +10,8 @@ namespace GersangTracker.Models
 
         public Monster Monster { get; set; } = null!;
         public List<DropLog> DropLogs { get; set; } = new();
-        // 사냥 시간 표시용 프로퍼티
+
+        // 사냥 시간 표시 프로퍼티
         public string HuntingTimeDisplay
         {
             get
