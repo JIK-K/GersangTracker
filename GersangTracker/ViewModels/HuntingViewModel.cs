@@ -65,7 +65,7 @@ namespace GersangTracker.ViewModels
             _dispatcherTimer.Start();
             _snifferService.Start();
 
-            AddStatusLog("패킷 스니핑 시작됨");
+            AddStatusLog("[시작됨]");
         }
 
         // 1초마다 경과시간 업데이트

@@ -162,9 +162,9 @@
                                             Cursor="Arrow">
                                         <Border.Effect>
                                             <DropShadowEffect Color="Black"
-                                                              Opacity="0.25"
-                                                              BlurRadius="18"
-                                                              ShadowDepth="3"/>
+                                                Opacity="0.25"
+                                                BlurRadius="18"
+                                                ShadowDepth="3"/>
                                         </Border.Effect>
                                         <Grid>
                                             <Grid.RowDefinitions>
@@ -184,11 +184,11 @@
                                                                FontSize="16" FontWeight="Bold"
                                                                TextWrapping="Wrap"/>
                                                     <iconPacks:PackIconMaterial Kind="Sword"
-                                                                                Width="18" Height="18"
-                                                                                HorizontalAlignment="Right"
-                                                                                VerticalAlignment="Top"
-                                                                                Foreground="White"
-                                                                                Opacity="0.35"/>
+                                                                Width="18" Height="18"
+                                                                HorizontalAlignment="Right"
+                                                                VerticalAlignment="Top"
+                                                                Foreground="White"
+                                                                Opacity="0.35"/>
                                                 </Grid>
                                             </Border>
 
@@ -208,23 +208,7 @@
                                                     </StackPanel>
                                                 </Button>
                                                 <Grid Margin="0,0,0,6">
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="*"/>
-                                                        <ColumnDefinition Width="6"/>
-                                                        <ColumnDefinition Width="*"/>
-                                                    </Grid.ColumnDefinitions>
-                                                    <Button Grid.Column="0"
-                                                            Style="{StaticResource SecondaryButton}"
-                                                            HorizontalAlignment="Stretch"
-                                                            Command="{Binding DataContext.ManageItemsCommand,
-                                                                RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                            CommandParameter="{Binding}">
-                                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                            <iconPacks:PackIconMaterial Kind="PackageVariant" Width="12" Height="12" Margin="0,0,4,0" Foreground="{StaticResource AccentColor}"/>
-                                                            <TextBlock Text="아이템" Foreground="{StaticResource AccentColor}"/>
-                                                        </StackPanel>
-                                                    </Button>
-                                                    <Button Grid.Column="2"
+                                                    <Button 
                                                             Style="{StaticResource SecondaryButton}"
                                                             HorizontalAlignment="Stretch"
                                                             Command="{Binding DataContext.OpenSessionsCommand,

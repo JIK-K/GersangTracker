@@ -56,7 +56,7 @@ namespace GersangTracker.Services
 
         private void CaptureLoop(CancellationToken token)
         {
-            StatusLog?.Invoke("거상 패킷 스니핑 준비 중...");
+            StatusLog?.Invoke("거상 트래커 준비 중...");
 
             while (_gersangPid == -1 && !token.IsCancellationRequested)
             {
@@ -94,7 +94,7 @@ namespace GersangTracker.Services
                 catch { }
             }
 
-            StatusLog?.Invoke("TCP 패킷 조립(Reassembly) 기능이 적용된 스니핑 시작");
+            StatusLog?.Invoke("[준비 완료]");
 
             while (!token.IsCancellationRequested)
             {
