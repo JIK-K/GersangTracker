@@ -41,8 +41,9 @@ namespace GersangTracker
             services.AddDbContext<AppDbContext>(ServiceLifetime.Transient);
 
             // Services
+            services.AddSingleton<ItemDatabaseService>();
+            services.AddTransient<PacketSnifferService>();
             services.AddTransient<DatabaseService>();
-            services.AddTransient<OcrService>();
             services.AddTransient<ExcelService>();
 
             // ViewModels

@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GersangTracker.Models;
 using GersangTracker.Services;
@@ -10,7 +10,7 @@ namespace GersangTracker.ViewModels
     public partial class HuntingViewModel : ObservableObject
     {
         private readonly DatabaseService _databaseService;
-        private readonly OcrService _ocrService;
+        private readonly PacketSnifferService _snifferService;
 
         // UI 스레드에서 동작하는 타이머 (경과시간 업데이트)
         private readonly DispatcherTimer _dispatcherTimer;
@@ -37,25 +37,15 @@ namespace GersangTracker.ViewModels
         // 아이템 합산 목록 (아이템명 별 총 수량)
         public ObservableCollection<ItemSummary> ItemSummaries { get; } = new();
 
-        public HuntingViewModel(Monster monster, DatabaseService databaseService, OcrService ocrService)
+        public HuntingViewModel(Monster monster, DatabaseService databaseService, PacketSnifferService snifferService)
         {
             CurrentMonster = monster;
             _databaseService = databaseService;
-            _ocrService = ocrService;
+            _snifferService = snifferService;
 
-            // OcrService 이벤트 구독 - 새 아이템 감지 시 OnItemDropped 호출
-            _ocrService.ItemDropped += OnItemDropped;
-
-            // OcrService 창 감지 이벤트 구독
-            _ocrService.WindowDetected += (s, detected) =>
-            {
-                AddStatusLog(detected ? "거상 창 감지됨" : "거상 창을 찾을 수 없음");
-            };
-            _ocrService.TextRecognized += (s, text) =>
-            {
-                AddStatusLog($"OCR : {text}");
-            };
-            _ocrService.StatusLog += (message) =>
+            // PacketSnifferService 이벤트 구독 - 새 아이템 감지 시 OnItemDropped 호출
+            _snifferService.ItemDropped += OnItemDropped;
+            _snifferService.StatusLog += (message) =>
             {
                 AddStatusLog(message);
             };
@@ -73,13 +63,10 @@ namespace GersangTracker.ViewModels
             _sessionId = await _databaseService.AddSessionAsync(CurrentMonster.Id, _startTime);
 
             var items = await _databaseService.GetMonsterItemsAsync(CurrentMonster.Id);
-            _ocrService.SetTargetItems(items.Select(x => x.ItemName).ToList());
-
             _dispatcherTimer.Start();
-            _ocrService.Start();
+            _snifferService.Start();
 
-            AddStatusLog("OCR 시작됨");
-            AddStatusLog("거상 창 감지 중...");
+            AddStatusLog("패킷 스니핑 시작됨");
         }
 
         // 1초마다 경과시간 업데이트
@@ -125,10 +112,8 @@ namespace GersangTracker.ViewModels
             // 타이머 정지
             _dispatcherTimer.Stop();
 
-            // OCR 정지
-            _ocrService.SaveLogFile();
-            _ocrService.Stop();
-            _ocrService.Dispose();
+            // Sniffer 정지
+            _snifferService.Stop();
 
             // DB 세션 업데이트
             await _databaseService.UpdateSessionAsync(_sessionId, DateTime.Now, 0);

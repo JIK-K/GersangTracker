@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GersangTracker.Models;
 using GersangTracker.Services;
@@ -77,23 +77,13 @@ namespace GersangTracker.ViewModels
             await LoadMonstersAsync();
         }
 
-        // 2번 - 사냥 시작 전 아이템 등록 여부 체크
+        // 사냥 시작
         [RelayCommand]
         private async Task StartHunting(Monster monster)
         {
-            var items = await _databaseService.GetMonsterItemsAsync(monster.Id);
-            if (items.Count == 0)
-            {
-                MessageBox.Show(
-                    "드롭 아이템이 등록되어 있지 않습니다.\n아이템 관리에서 아이템을 먼저 추가해주세요.",
-                    "아이템 없음",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
-                return;
-            }
 
-            var ocrService = App.ServiceProvider.GetRequiredService<OcrService>();
-            var viewModel = new HuntingViewModel(monster, _databaseService, ocrService);
+            var snifferService = App.ServiceProvider.GetRequiredService<PacketSnifferService>();
+            var viewModel = new HuntingViewModel(monster, _databaseService, snifferService);
             var window = new HuntingWindow(viewModel);
             // 4번 - Owner 제거해서 창 독립
             window.Show();
