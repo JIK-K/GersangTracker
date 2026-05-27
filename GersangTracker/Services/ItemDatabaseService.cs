@@ -21,7 +21,7 @@ namespace GersangTracker.Services
 
         public void LoadDatabase()
         {
-            string dbPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "전체아이템.json");
+            string dbPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "GersangItems.json");
             
             // For development time fallback if BaseDirectory doesn't have it
             if (!File.Exists(dbPath)) 

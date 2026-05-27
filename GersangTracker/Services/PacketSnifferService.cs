@@ -27,7 +27,6 @@ namespace GersangTracker.Services
         private ItemDatabaseService _dbService;
 
         private Dictionary<string, List<byte>> _connectionBuffers = new Dictionary<string, List<byte>>();
-
         private Dictionary<string, HashSet<uint>> _seenSequences = new Dictionary<string, HashSet<uint>>();
 
         public event EventHandler<DroppedItemEventArgs>? ItemDropped;
@@ -95,7 +94,6 @@ namespace GersangTracker.Services
                 catch { }
             }
 
-            StatusLog?.Invoke("TCP 패킷 조립(Reassembly) 기능이 적용된 스니핑 시작!");
             StatusLog?.Invoke("TCP 패킷 조립(Reassembly) 기능이 적용된 스니핑 시작");
 
             while (!token.IsCancellationRequested)
