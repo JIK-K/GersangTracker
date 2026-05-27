@@ -6,18 +6,16 @@
 
 ---
 
-## ✨ 기능
+## 기능
 
-- [x] OCR 기반 실시간 아이템 드랍 자동 감지
-- [x] 레벤슈타인 알고리즘으로 오인식 자동 보정
+- [x] 실시간 아이템 드랍 자동 감지
 - [x] 아이템 단가 입력 후 총 수익 / 시간당 수익 계산
 - [x] 사냥 세션 기록 및 조회
 - [x] 엑셀 내보내기 지원
-- [x] 몬스터별 드랍 아이템 관리
 
 ---
 
-## ⚡ 빠른 시작
+## 빠른 시작
 
 **다운로드**
 
@@ -26,11 +24,10 @@
 **설치**
 
 1. `GersangTracker.zip` 압축 해제
-2. 만약 에러 또는 감지가 안될때 `Assets/tessdata/` 폴더에 `kor.traineddata` 파일 추가
-   - 다운로드: https://github.com/tesseract-ocr/tessdata/raw/main/kor.traineddata
+2. [Npcap 공식 사이트](https://npcap.com/#download) 에서 최신 버전 설치
 3. `GersangTracker.exe` 실행
 
-> ⚠️ `kor.traineddata` 파일이 없으면 OCR이 동작하지 않습니다.
+> ⚠️ `Npcap` 이 설치 되어 있지 않으면 동작하지 않습니다.
 
 ---
 
@@ -38,7 +35,4 @@
 
 사용자 매뉴얼은 [여기](https://github.com/JIK-K/GersangTracker/wiki)에서 확인하실 수 있습니다.
 
-## 🎁 Sponser
-
-[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-포만감%20채워주기-yellow?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/dnswlrsla)
 
