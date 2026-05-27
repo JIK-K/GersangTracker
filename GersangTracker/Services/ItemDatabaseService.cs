@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
@@ -26,7 +26,7 @@ namespace GersangTracker.Services
             // For development time fallback if BaseDirectory doesn't have it
             if (!File.Exists(dbPath)) 
             {
-                dbPath = Path.Combine(Directory.GetCurrentDirectory(), "Data", "전체아이템.json");
+                dbPath = Path.Combine(Directory.GetCurrentDirectory(), "Data", "GersangItems.json");
             }
 
             if (File.Exists(dbPath))
@@ -45,7 +45,7 @@ namespace GersangTracker.Services
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Error loading 전체아이템.json: {ex.Message}");
+                    System.Diagnostics.Debug.WriteLine($"Error loading GersangItems.json: {ex.Message}");
                 }
             }
         }

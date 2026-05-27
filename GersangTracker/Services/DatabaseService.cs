@@ -159,47 +159,6 @@ namespace GersangTracker.Services
             await db.SaveChangesAsync();
         }
 
-        // DatabaseService.cs에 추가
-
-        // 몬스터의 아이템 목록 조회
-        public async Task<List<MonsterItem>> GetMonsterItemsAsync(int monsterId)
-        {
-            using var db = new AppDbContext();
-            return await db.MonsterItems
-                .Where(x => x.MonsterId == monsterId)
-                .OrderBy(x => x.ItemName)
-                .ToListAsync();
-        }
-
-        // 아이템 추가
-        public async Task AddMonsterItemAsync(int monsterId, string itemName)
-        {
-            using var db = new AppDbContext();
-            // 중복 방지
-            bool exists = await db.MonsterItems
-                .AnyAsync(x => x.MonsterId == monsterId && x.ItemName == itemName);
-            if (exists) return;
-
-            db.MonsterItems.Add(new MonsterItem
-            {
-                MonsterId = monsterId,
-                ItemName = itemName.Trim()
-            });
-            await db.SaveChangesAsync();
-        }
-
-        // 아이템 삭제
-        public async Task DeleteMonsterItemAsync(int id)
-        {
-            using var db = new AppDbContext();
-            var item = await db.MonsterItems.FindAsync(id);
-            if (item != null)
-            {
-                db.MonsterItems.Remove(item);
-                await db.SaveChangesAsync();
-            }
-        }
-
         public async Task UpdateDropLogUnitPriceAsync(int dropLogId, long unitPrice)
         {
             using var db = new AppDbContext();

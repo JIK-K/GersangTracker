@@ -1,11 +1,11 @@
-# Visual Studio
+﻿# Visual Studio
 .vs/
 *.user
 *.suo
 *.userosscache
 *.sln.docview
 
-# Build 결과물
+# Build 
 bin/
 obj/
 out/
@@ -23,16 +23,14 @@ artifacts/
 *.pdb
 *.cache
 
-# SQLite DB 파일 (로컬 데이터)
+# SQLite DB 
 *.db
 *.db-shm
 *.db-wal
 *.sqlite
 
-# 엑셀 임시파일
 ~$*.xlsx
 
-# 로그
 *.log
 
 # OS
@@ -40,6 +38,5 @@ artifacts/
 Thumbs.db
 desktop.ini
 
-# temp 폴더
 temp/
 tmp/

@@ -10,7 +10,6 @@ namespace GersangTracker.Data
         public DbSet<Session> Sessions { get; set; }
         public DbSet<DropLog> DropLogs { get; set; }
         public DbSet<ItemPrice> ItemPrices { get; set; }
-        public DbSet<MonsterItem> MonsterItems { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -60,8 +59,6 @@ namespace GersangTracker.Data
                       .HasForeignKey(e => e.MonsterId);
             });
 
-            modelBuilder.Entity<MonsterItem>()
-                .ToTable("monster_items");
         }
     }
 }

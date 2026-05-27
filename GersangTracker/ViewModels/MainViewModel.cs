@@ -1,4 +1,4 @@
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GersangTracker.Models;
 using GersangTracker.Services;
@@ -96,17 +96,6 @@ namespace GersangTracker.ViewModels
             var window = new SessionWindow(viewModel);
             // 4번 - Owner 제거해서 창 독립
             window.Show();
-        }
-
-        [RelayCommand]
-        private async Task ManageItems(Monster monster)
-        {
-            var vm = new MonsterItemViewModel(_databaseService, monster.Id, monster.Name);
-            var dialog = new MonsterItemDialog(vm)
-            {
-                Owner = Application.Current.MainWindow
-            };
-            dialog.ShowDialog();
         }
     }
 }

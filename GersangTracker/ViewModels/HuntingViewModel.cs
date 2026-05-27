@@ -1,4 +1,4 @@
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GersangTracker.Models;
 using GersangTracker.Services;
@@ -12,7 +12,7 @@ namespace GersangTracker.ViewModels
         private readonly DatabaseService _databaseService;
         private readonly PacketSnifferService _snifferService;
 
-        // UI 스레드에서 동작하는 타이머 (경과시간 업데이트)
+        // UI 스레드에서 동작하는 타이머 (경과시간 업데이트)    
         private readonly DispatcherTimer _dispatcherTimer;
 
         // 사냥 시작 시간
@@ -62,7 +62,6 @@ namespace GersangTracker.ViewModels
             _startTime = DateTime.Now;
             _sessionId = await _databaseService.AddSessionAsync(CurrentMonster.Id, _startTime);
 
-            var items = await _databaseService.GetMonsterItemsAsync(CurrentMonster.Id);
             _dispatcherTimer.Start();
             _snifferService.Start();
 

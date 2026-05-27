@@ -24,19 +24,13 @@ namespace GersangTracker.Views
             _viewModel = viewModel;
             DataContext = _viewModel;
         }
+        // 수정 후
         protected override async void OnContentRendered(EventArgs e)
         {
             base.OnContentRendered(e);
-            try
-            {
-                await _viewModel.LoadPreviousPricesAsync();
-            }catch(FileNotFoundException ex)
-            {
-                MessageBox.Show(ex.Message, "OCR ?뚯씪 ?놁쓬",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
-                Close();
-            }
+            await _viewModel.LoadPreviousPricesAsync();
         }
+
         private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
             => DragMove();
 

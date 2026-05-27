@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -27,8 +27,8 @@ namespace GersangTracker.Services
         private ItemDatabaseService _dbService;
 
         private Dictionary<string, List<byte>> _connectionBuffers = new Dictionary<string, List<byte>>();
-        private Dictionary<uint, uint> _globalInventory = new Dictionary<uint, uint>();
 
+        private Dictionary<string, HashSet<uint>> _seenSequences = new Dictionary<string, HashSet<uint>>();
 
         public event EventHandler<DroppedItemEventArgs>? ItemDropped;
         public event Action<string>? StatusLog;
@@ -96,6 +96,7 @@ namespace GersangTracker.Services
             }
 
             StatusLog?.Invoke("TCP 패킷 조립(Reassembly) 기능이 적용된 스니핑 시작!");
+            StatusLog?.Invoke("TCP 패킷 조립(Reassembly) 기능이 적용된 스니핑 시작");
 
             while (!token.IsCancellationRequested)
             {
@@ -176,10 +177,10 @@ namespace GersangTracker.Services
         {
             var rawPacket = e.GetPacket();
             var packet = Packet.ParsePacket(rawPacket.LinkLayerType, rawPacket.Data);
-            
+
             var ipPacket = packet.Extract<IPPacket>();
             if (ipPacket == null) return;
-            
+
             string srcIp = ipPacket.SourceAddress.ToString();
             string dstIp = ipPacket.DestinationAddress.ToString();
 
@@ -208,6 +209,24 @@ namespace GersangTracker.Services
 
             if (payload == null || payload.Length == 0) return;
 
+            if (tcpPacket != null)
+            {
+                uint seq = tcpPacket.SequenceNumber;
+                lock (_seenSequences)
+                {
+                    if (!_seenSequences.ContainsKey(connectionKey))
+                        _seenSequences[connectionKey] = new HashSet<uint>();
+
+                    if (_seenSequences[connectionKey].Contains(seq))
+                        return; 
+
+                    _seenSequences[connectionKey].Add(seq);
+
+                    if (_seenSequences[connectionKey].Count > 1000)
+                        _seenSequences[connectionKey].Clear();
+                }
+            }
+
             bool isGersangPacket = false;
             lock (_gersangPorts)
             {
@@ -230,12 +249,12 @@ namespace GersangTracker.Services
         {
             if (!_connectionBuffers.ContainsKey(connectionKey))
                 _connectionBuffers[connectionKey] = new List<byte>();
-                
+
             var buffer = _connectionBuffers[connectionKey];
             buffer.AddRange(payload);
-            
+
             // 너무 크면 비움 (메모리 누수 방지)
-            if (buffer.Count > 1024 * 1024) 
+            if (buffer.Count > 1024 * 1024)
             {
                 buffer.Clear();
                 return;
@@ -244,18 +263,18 @@ namespace GersangTracker.Services
             while (buffer.Count >= 2)
             {
                 int packetLength = BitConverter.ToUInt16(buffer.ToArray(), 0);
-                
+
                 // 패킷 길이가 4 미만이거나 6000 이상이면 Sync 박살 (Gersang 패킷은 보통 4000 이하)
                 if (packetLength < 4 || packetLength > 6000)
                 {
                     buffer.RemoveAt(0); // 1바이트 쉬프트하며 복구 시도
                     continue;
                 }
-                
+
                 if (buffer.Count >= packetLength)
                 {
                     byte unk = buffer[2]; // 보통 00
-                    if (unk != 0x00) 
+                    if (unk != 0x00)
                     {
                         buffer.RemoveAt(0);
                         continue;
@@ -263,7 +282,7 @@ namespace GersangTracker.Services
 
                     byte[] fullPacket = buffer.Take(packetLength).ToArray();
                     buffer.RemoveRange(0, packetLength);
-                    
+
                     ProcessFullPacket(fullPacket);
                 }
                 else
@@ -276,87 +295,44 @@ namespace GersangTracker.Services
         private void ProcessFullPacket(byte[] payload)
         {
             if (payload.Length < 5) return;
-            
-            string hex = BitConverter.ToString(payload).Replace("-", " ");
-            string header = $"{payload[3]:X2} {payload[4]:X2}"; // 사실상 Opcode 위치 추정
 
             // 모든 패킷을 로그에 기록 (사용자가 나중에 확인할 수 있도록)
+            string hex = BitConverter.ToString(payload).Replace("-", " ");
+            string header = $"{payload[3]:X2} {payload[4]:X2}";
             File.AppendAllText("FullPacketLog.txt", $"[{DateTime.Now:HH:mm:ss.fff}] [{header}] Length:{payload.Length} | {hex}\n");
 
             // F0 03 패킷은 전투 종료 후 모든 용병의 전체 인벤토리 상태를 동기화하는 패킷입니다.
             // 인벤토리 상태를 이전과 비교하여 새롭게 증가한 수량만 드랍으로 판별합니다.
-            if (header == "F0 03")
+            for (int i = 0; i <= payload.Length - 62; i++)
             {
-                ExtractDropsFromInventorySync(payload);
-            }
-        }
-
-        private void ExtractDropsFromInventorySync(byte[] payload)
-        {
-            var currentInventory = new Dictionary<uint, uint>();
-
-            // 전체 인벤토리 아이템 시그니처: [Category 1byte] 00 00 00 [ID 4bytes] [Qty 4bytes]
-            for (int i = 5; i <= payload.Length - 12; i++)
-            {
-                byte cat = payload[i];
-                if (cat > 0 && cat < 30 && payload[i + 1] == 0x00 && payload[i + 2] == 0x00 && payload[i + 3] == 0x00)
+                if (payload[i] == 0x77 && payload[i + 1] == 0x27 && payload[i + 2] == 0x00 && payload[i + 3] == 0x00)
                 {
-                    uint id = BitConverter.ToUInt32(payload, i + 4);
-                    uint qty = BitConverter.ToUInt32(payload, i + 8);
+                    uint id = BitConverter.ToUInt32(payload, i + 54);
+                    uint qty = BitConverter.ToUInt32(payload, i + 58);
 
                     if (id > 0 && id < 60000 && qty > 0 && qty < 10000)
                     {
-                        if (!currentInventory.ContainsKey(id))
-                            currentInventory[id] = 0;
-                        currentInventory[id] += qty;
-                        i += 11; // 구조체 크기만큼 점프
-                    }
-                }
-            }
+                        string itemName = _dbService.GetItemName(id.ToString());
 
-            // 첫 F0 03 패킷(로그인 직후 등)은 드랍으로 간주하지 않고 상태만 초기화
-            if (_globalInventory.Count == 0)
-            {
-                if (currentInventory.Count > 0)
-                {
-                    _globalInventory = currentInventory;
-                    StatusLog?.Invoke("인벤토리 상태가 성공적으로 동기화되었습니다. (최초 1회)");
-                }
-                return;
-            }
-
-            // 이전 상태와 비교하여 증가한 수량만 드랍으로 처리
-            foreach (var kvp in currentInventory)
-            {
-                uint id = kvp.Key;
-                uint newQty = kvp.Value;
-                uint oldQty = _globalInventory.ContainsKey(id) ? _globalInventory[id] : 0;
-
-                if (newQty > oldQty)
-                {
-                    uint droppedQty = newQty - oldQty;
-
-                    string itemName = _dbService.GetItemName(id.ToString());
-                    if (string.IsNullOrEmpty(itemName) && id > 9472)
-                    {
-                        itemName = _dbService.GetItemName((id - 9472).ToString());
-                    }
-
-                    if (!string.IsNullOrEmpty(itemName))
-                    {
-                        ItemDropped?.Invoke(this, new DroppedItemEventArgs
+                        if (string.IsNullOrEmpty(itemName) && id > 9472)
                         {
-                            ItemName = itemName,
-                            Quantity = (int)droppedQty,
-                            DroppedAt = DateTime.Now
-                        });
-                        StatusLog?.Invoke($"{itemName} {droppedQty}개 획득!");
+                            itemName = _dbService.GetItemName((id - 9472).ToString());
+                        }
+
+                        if (!string.IsNullOrEmpty(itemName))
+                        {
+                            ItemDropped?.Invoke(this, new DroppedItemEventArgs
+                            {
+                                ItemName = itemName,
+                                Quantity = (int)qty,
+                                DroppedAt = DateTime.Now
+                            });
+
+                            StatusLog?.Invoke($"[아이템 획득] {itemName} {qty}개를 획득했습니다!");
+                        }
                     }
                 }
             }
-
-            // 동기화 완료 후 글로벌 상태 업데이트
-            _globalInventory = currentInventory;
         }
 
         public void Dispose()

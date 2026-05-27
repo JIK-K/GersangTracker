@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -17,13 +17,9 @@
 
   <ItemGroup>
     <None Remove="Assets\favicon.ico" />
-    <None Remove="Assets\tessdata\kor.traineddata" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="Assets\tessdata\kor.traineddata">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
     <Content Include="favicon.ico" />
   </ItemGroup>
 
@@ -57,5 +53,11 @@
     <Resource Include="Assets\favicon.ico">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Resource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Data\GersangItems.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 </Project>
