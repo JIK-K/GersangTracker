@@ -262,7 +262,6 @@ namespace GersangTracker.Services
             {
                 int packetLength = BitConverter.ToUInt16(buffer.ToArray(), 0);
 
-                // 패킷 길이가 4 미만이거나 6000 이상이면 Sync 박살 (Gersang 패킷은 보통 4000 이하)
                 if (packetLength < 4 || packetLength > 6000)
                 {
                     buffer.RemoveAt(0); // 1바이트 쉬프트하며 복구 시도
@@ -294,13 +293,10 @@ namespace GersangTracker.Services
         {
             if (payload.Length < 5) return;
 
-            // 모든 패킷을 로그에 기록 (사용자가 나중에 확인할 수 있도록)
             string hex = BitConverter.ToString(payload).Replace("-", " ");
             string header = $"{payload[3]:X2} {payload[4]:X2}";
-            File.AppendAllText("FullPacketLog.txt", $"[{DateTime.Now:HH:mm:ss.fff}] [{header}] Length:{payload.Length} | {hex}\n");
+            //File.AppendAllText("FullPacketLog.txt", $"[{DateTime.Now:HH:mm:ss.fff}] [{header}] Length:{payload.Length} | {hex}\n");
 
-            // F0 03 패킷은 전투 종료 후 모든 용병의 전체 인벤토리 상태를 동기화하는 패킷입니다.
-            // 인벤토리 상태를 이전과 비교하여 새롭게 증가한 수량만 드랍으로 판별합니다.
             for (int i = 0; i <= payload.Length - 62; i++)
             {
                 if (payload[i] == 0x77 && payload[i + 1] == 0x27 && payload[i + 2] == 0x00 && payload[i + 3] == 0x00)
