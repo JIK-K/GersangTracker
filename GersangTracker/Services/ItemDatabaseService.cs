@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
@@ -21,32 +21,31 @@ namespace GersangTracker.Services
 
         public void LoadDatabase()
         {
-            string dbPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "GersangItems.json");
-            
-            // For development time fallback if BaseDirectory doesn't have it
-            if (!File.Exists(dbPath)) 
+            try
             {
-                dbPath = Path.Combine(Directory.GetCurrentDirectory(), "Data", "GersangItems.json");
-            }
+                var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+                var resourceName = "GersangTracker.Data.GersangItems.json";
 
-            if (File.Exists(dbPath))
-            {
-                try
+                using (Stream? stream = assembly.GetManifestResourceStream(resourceName))
                 {
-                    string json = File.ReadAllText(dbPath);
-                    var db = JsonSerializer.Deserialize<Dictionary<string, ItemInfo>>(json);
-                    if (db != null)
+                    if (stream == null) return;
+                    using (StreamReader reader = new StreamReader(stream))
                     {
-                        foreach (var kvp in db)
+                        string json = reader.ReadToEnd();
+                        var db = JsonSerializer.Deserialize<Dictionary<string, ItemInfo>>(json);
+                        if (db != null)
                         {
-                            _itemDatabase[kvp.Key] = kvp.Value.name;
+                            foreach (var kvp in db)
+                            {
+                                _itemDatabase[kvp.Key] = kvp.Value.name;
+                            }
                         }
                     }
                 }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Error loading GersangItems.json: {ex.Message}");
-                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error loading GersangItems.json: {ex.Message}");
             }
         }
 

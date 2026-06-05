@@ -1,4 +1,4 @@
-﻿using GersangTracker.Data;
+using GersangTracker.Data;
 using GersangTracker.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -69,6 +69,16 @@ namespace GersangTracker.Services
             var session = await db.Sessions.FindAsync(sessionId);
             if (session == null) return;
             session.EndedAt = endedAt;
+            session.TotalProfit = totalProfit;
+            await db.SaveChangesAsync();
+        }
+
+        // [Session] - [Update] 세션 수익만 업데이트
+        public async Task UpdateSessionProfitAsync(int sessionId, long totalProfit)
+        {
+            using var db = new AppDbContext();
+            var session = await db.Sessions.FindAsync(sessionId);
+            if (session == null) return;
             session.TotalProfit = totalProfit;
             await db.SaveChangesAsync();
         }

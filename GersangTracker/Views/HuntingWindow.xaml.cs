@@ -56,6 +56,5 @@ namespace GersangTracker.Views
             Close();
         }
 
-        
     }
 }

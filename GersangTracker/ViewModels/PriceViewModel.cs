@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GersangTracker.Models;
 using GersangTracker.Services;
@@ -127,9 +127,9 @@ namespace GersangTracker.ViewModels
 
             await _databaseService.SyncDropLogsAsync(_sessionId, syncItems);
 
-            // 3. 세션 정보 업데이트 (총수익 및 종료 시간)
+            // 3. 세션 정보 업데이트 (총수익만 업데이트, 종료 시간은 사냥 종료 시점 유지)
             long totalProfit = PriceItems.Sum(p => p.Total);
-            await _databaseService.UpdateSessionAsync(_sessionId, DateTime.Now, totalProfit);
+            await _databaseService.UpdateSessionProfitAsync(_sessionId, totalProfit);
         }
 
         // 총수익

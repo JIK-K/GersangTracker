@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using GersangTracker.Models;
 using GersangTracker.Services;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Windows.Threading;
 
 namespace GersangTracker.ViewModels
@@ -17,6 +18,7 @@ namespace GersangTracker.ViewModels
 
         // 사냥 시작 시간
         private DateTime _startTime;
+        private readonly Stopwatch _stopwatch = new Stopwatch();
 
         // 현재 세션 ID
         private int _sessionId;
@@ -27,6 +29,9 @@ namespace GersangTracker.ViewModels
         // 경과 시간 표시
         [ObservableProperty]
         private string _elapsedTime = "00:00:00";
+
+        [ObservableProperty]
+        private bool _isPaused = false;
 
         // 연결 상태 로그
         public ObservableCollection<string> StatusLogs { get; } = new();
@@ -56,12 +61,32 @@ namespace GersangTracker.ViewModels
             _dispatcherTimer.Tick += OnTimerTick;
         }
 
+        // 일시정지/재개 커맨드
+        [RelayCommand]
+        private void TogglePause()
+        {
+            if (IsPaused)
+            {
+                _stopwatch.Start();
+                _dispatcherTimer.Start();
+                IsPaused = false;
+            }
+            else
+            {
+                _stopwatch.Stop();
+                _dispatcherTimer.Stop();
+                IsPaused = true;
+            }
+
+        }
+
         // 사냥 시작
         public async Task StartAsync()
         {
             _startTime = DateTime.Now;
             _sessionId = await _databaseService.AddSessionAsync(CurrentMonster.Id, _startTime);
 
+            _stopwatch.Start();
             _dispatcherTimer.Start();
             _snifferService.Start();
 
@@ -71,8 +96,8 @@ namespace GersangTracker.ViewModels
         // 1초마다 경과시간 업데이트
         private void OnTimerTick(object? sender, EventArgs e)
         {
-            var elapsed = DateTime.Now - _startTime;
-            ElapsedTime = elapsed.ToString(@"hh\:mm\:ss");
+            //var elapsed = DateTime.Now - _startTime;
+            ElapsedTime = _stopwatch.Elapsed.ToString(@"hh\:mm\:ss");
         }
 
         // 아이템 드롭 감지 시 호출
@@ -110,12 +135,12 @@ namespace GersangTracker.ViewModels
         {
             // 타이머 정지
             _dispatcherTimer.Stop();
-
+            _stopwatch.Stop();
             // Sniffer 정지
             _snifferService.Stop();
 
-            // DB 세션 업데이트
-            await _databaseService.UpdateSessionAsync(_sessionId, DateTime.Now, 0);
+            var endTime = _startTime + _stopwatch.Elapsed;
+            await _databaseService.UpdateSessionAsync(_sessionId, endTime, 0);
 
             return _sessionId;
         }

@@ -54,7 +54,83 @@
                                    Foreground="White" FontSize="16" FontWeight="Bold"/>
                     </StackPanel>
                     <!-- 경과 시간 배지 -->
-                    <Border HorizontalAlignment="Right" VerticalAlignment="Center"
+                    <!-- 경과 시간 배지 + 일시정지 버튼 -->
+                    <StackPanel HorizontalAlignment="Right" VerticalAlignment="Center"
+            Orientation="Horizontal">
+                        <!-- 일시정지/재생 버튼 -->
+                        <Button Width="32" Height="32" Margin="0,0,6,0"
+            Command="{Binding TogglePauseCommand}"
+            Background="#22000000" BorderThickness="0"
+            Cursor="Hand" ToolTip="일시정지 / 재생">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border Background="{TemplateBinding Background}"
+                                    CornerRadius="6" Padding="6">
+                                                    <ContentPresenter HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center"/>
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </Button.Style>
+                            <!-- IsPaused에 따라 아이콘 전환 -->
+                            <Viewbox Width="14" Height="14" Stretch="Uniform">
+                                <Canvas Width="16" Height="16">
+                                    <Path Stroke="White" StrokeThickness="2"
+              StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+              Data="M 4,2 L 4,14 M 10,2 L 10,14">
+                                        <Path.Style>
+                                            <Style TargetType="Path">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsPaused}" Value="True">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Path.Style>
+                                    </Path>
+                                    <Path Fill="White" Data="M 3,2 L 14,8 L 3,14 Z">
+                                        <Path.Style>
+                                            <Style TargetType="Path">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsPaused}" Value="True">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Path.Style>
+                                    </Path>
+                                </Canvas>
+                            </Viewbox>
+                        </Button>
+
+                        <!-- 경과 시간 -->
+                        <Border Background="#22000000" CornerRadius="6" Padding="10,6">
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="경과 시간" Foreground="White" Opacity="0.7"
+                       FontSize="9" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                <TextBlock Text="{Binding ElapsedTime}" Foreground="White"
+                       FontSize="20" FontWeight="Bold" HorizontalAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsPaused}" Value="True">
+                                                    <Setter Property="Opacity" Value="0.5"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                    <!-- <Border HorizontalAlignment="Right" VerticalAlignment="Center"
                             Background="#22000000" CornerRadius="6" Padding="10,6">
                         <StackPanel HorizontalAlignment="Center">
                             <TextBlock Text="경과 시간" Foreground="White" Opacity="0.7"
@@ -62,7 +138,7 @@
                             <TextBlock Text="{Binding ElapsedTime}" Foreground="White"
                                        FontSize="20" FontWeight="Bold" HorizontalAlignment="Center"/>
                         </StackPanel>
-                    </Border>
+                    </Border> -->
                 </Grid>
             </Border>
 
