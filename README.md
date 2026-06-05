@@ -23,7 +23,7 @@
 
 **설치**
 
-1. `GersangTracker.zip` 압축 해제
+1. `GersangTracker_Setup.exe` 설치 실행
 2. [Npcap 공식 사이트](https://npcap.com/#download) 에서 최신 버전 설치
 3. `GersangTracker.exe` 실행
 
