@@ -1,4 +1,4 @@
-using GersangTracker.Data;
+﻿using GersangTracker.Data;
 using GersangTracker.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -20,7 +20,7 @@ namespace GersangTracker.Services
             var isExist = await db.Monsters.AnyAsync(m => m.Name == name);
             if (isExist)
             {
-                throw new InvalidOperationException("이미 존재하는 몬스터 이름입니다.");
+                throw new InvalidOperationException("이미 존재하는 몬스터 이름 입니다.");
             }
             db.Monsters.Add(new Monster { Name = name });
             await db.SaveChangesAsync();
@@ -103,7 +103,7 @@ namespace GersangTracker.Services
             await db.SaveChangesAsync();
         }
 
-        // [DropLog] - [Create] 드롭 로그 추가
+        // [DropLog] - [Create] 드랍 로그 추가
         public async Task AddDropLogAsync(int sessionId, string itemName, int quantity)
         {
             try

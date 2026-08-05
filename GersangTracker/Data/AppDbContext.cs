@@ -10,6 +10,9 @@ namespace GersangTracker.Data
         public DbSet<Session> Sessions { get; set; }
         public DbSet<DropLog> DropLogs { get; set; }
         public DbSet<ItemPrice> ItemPrices { get; set; }
+        public DbSet<Account> Account { get; set; }
+        public DbSet<ClientInstance> ClientInstances { get; set; }
+
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -59,6 +62,21 @@ namespace GersangTracker.Data
                       .HasForeignKey(e => e.MonsterId);
             });
 
+            modelBuilder.Entity<Account>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.UserId).IsRequired();
+                entity.HasIndex(e => e.UserId).IsUnique();
+            });
+
+            modelBuilder.Entity<ClientInstance>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.HasOne(e => e.Account)
+                      .WithOne(a => a.ClientInstance)
+                      .HasForeignKey<ClientInstance>(e => e.AccountId)
+                      .OnDelete(DeleteBehavior.SetNull);
+            });
         }
     }
 }
