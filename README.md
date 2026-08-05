@@ -1,4 +1,4 @@
-# ![favicon](https://github.com/user-attachments/assets/8e3ec54d-697d-4713-813c-396aa4a40abb) GersangTracker
+# ![favicon](https://github.com/user-attachments/assets/8e3ec54d-697d-4713-813c-396aa4a40abb) GersangTracker | 거상트래커
 거상 트래커
 
 
