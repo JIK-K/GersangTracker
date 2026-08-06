@@ -2,7 +2,6 @@
 using System.Security.Cryptography;
 using System.Text;
 
-
 namespace GersangTracker.Services
 {
     public static class SecureDataHelper
@@ -20,12 +19,13 @@ namespace GersangTracker.Services
 
         public static string Decrypt(string encryptedText)
         {
-            if(string.IsNullOrEmpty(encryptedText)) { return encryptedText; }
+            if (string.IsNullOrEmpty(encryptedText)) { return encryptedText; }
 
             try
             {
                 byte[] data = Convert.FromBase64String(encryptedText);
-                byte[] decrypted = ProtectedData.Protect(data, null, DataProtectionScope.CurrentUser);
+                // 기존 버그 수정 완료: Protect -> Unprotect
+                byte[] decrypted = ProtectedData.Unprotect(data, null, DataProtectionScope.CurrentUser);
 
                 return Encoding.UTF8.GetString(decrypted);
             }

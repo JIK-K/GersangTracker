@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Threading;
+using System.Collections.Concurrent;
 
 namespace GersangTracker.ViewModels
 {
@@ -16,7 +17,7 @@ namespace GersangTracker.ViewModels
         private readonly DatabaseService _databaseService;
         private readonly PacketSnifferService _snifferService;
 
-        // UI 스레드에서 동작하는 타이머 (경과시간 업데이트)    
+        // UI 스레드에서 동작하는 타이머 (경과시간 업데이트 및 PID 상태 폴링)    
         private readonly DispatcherTimer _dispatcherTimer;
 
         // 사냥 시작 시간
@@ -29,6 +30,9 @@ namespace GersangTracker.ViewModels
         // 타겟 프로세스 (현재 탭의 클라이언트 설치 경로 기반)
         private int _targetPid = -1;
         private string _clientPath;
+
+        // [핵심] 다른 탭에서 이미 선점한 PID를 기억하여 겹치지 않게 방지 (동일 폴더 다클라 완벽 지원)
+        private static readonly ConcurrentDictionary<int, bool> ClaimedPids = new();
 
         // 사냥 중인 몬스터
         public Monster CurrentMonster { get; }
@@ -49,7 +53,6 @@ namespace GersangTracker.ViewModels
         // 아이템 합산 목록 (아이템명 별 총 수량)
         public ObservableCollection<ItemSummary> ItemSummaries { get; } = new();
 
-        // 생성자 매개변수에 clientPath 추가됨
         public HuntingViewModel(Monster monster, DatabaseService databaseService, PacketSnifferService snifferService, string clientPath)
         {
             CurrentMonster = monster;
@@ -57,7 +60,7 @@ namespace GersangTracker.ViewModels
             _snifferService = snifferService;
             _clientPath = clientPath;
 
-            FindTargetPid(); // 클라이언트 경로를 바탕으로 추적할 거상의 실제 PID 찾기
+            FindTargetPid();
 
             // PacketSnifferService 이벤트 구독
             _snifferService.ItemDropped += OnItemDropped;
@@ -66,7 +69,7 @@ namespace GersangTracker.ViewModels
                 AddStatusLog(message);
             };
 
-            // DispatcherTimer 설정
+            // DispatcherTimer 설정 (1초마다 경과시간 갱신 및 PID 폴링)
             _dispatcherTimer = new DispatcherTimer();
             _dispatcherTimer.Interval = TimeSpan.FromSeconds(1);
             _dispatcherTimer.Tick += OnTimerTick;
@@ -74,33 +77,48 @@ namespace GersangTracker.ViewModels
 
         private void FindTargetPid()
         {
-            if (string.IsNullOrEmpty(_clientPath)) return;
+            if (string.IsNullOrEmpty(_clientPath) || _targetPid != -1) return;
+
+            string expectedExePath = System.IO.Path.Combine(_clientPath, "gersang.exe").Replace("/", "\\");
 
             var processes = Process.GetProcessesByName("gersang");
             foreach (var p in processes)
             {
+                // 다른 탭에서 이미 선점한 PID라면 건너뜀 (다클라 겹침 완벽 방지)
+                if (ClaimedPids.ContainsKey(p.Id))
+                    continue;
+
+                bool isMatch = false;
                 try
                 {
-                    if (p.MainModule?.FileName.Equals(_clientPath, StringComparison.OrdinalIgnoreCase) == true)
+                    string? pPath = p.MainModule?.FileName?.Replace("/", "\\");
+                    if (string.Equals(pPath, expectedExePath, StringComparison.OrdinalIgnoreCase))
                     {
-                        _targetPid = p.Id;
-                        AddStatusLog($"[클라이언트 매칭 성공] PID: {_targetPid}");
-                        break;
+                        isMatch = true; // 경로가 정확히 일치함
                     }
                 }
                 catch
                 {
-                    // 접근 권한 부족 (System 권한 등)은 무시
+                    // [핵심] 안티치트(보안 프로그램)가 경로 접근을 차단하여 에러가 났을 경우!
+                    // 어차피 중복 할당 방지 처리가 되어있으므로, 남은 빈 거상 클라이언트라고 간주하고 그냥 할당합니다.
+                    isMatch = true;
+                }
+
+                if (isMatch)
+                {
+                    ClaimedPids.TryAdd(p.Id, true);
+                    _targetPid = p.Id;
+                    AddStatusLog($"[클라이언트 매칭 성공] 추적 PID: {_targetPid}");
+                    break;
                 }
             }
 
             if (_targetPid == -1)
             {
-                AddStatusLog($"[경고] '{_clientPath}' 경로로 실행된 거상을 찾지 못했습니다. 드랍 기록이 수집되지 않을 수 있습니다.");
+                AddStatusLog($"[대기 중] 게임 실행 및 런처 접속을 대기중입니다..");
             }
         }
 
-        // 일시정지/재개 커맨드
         [RelayCommand]
         private void TogglePause()
         {
@@ -118,7 +136,6 @@ namespace GersangTracker.ViewModels
             }
         }
 
-        // 사냥 시작
         public async Task StartAsync()
         {
             _startTime = DateTime.Now;
@@ -128,29 +145,49 @@ namespace GersangTracker.ViewModels
             _dispatcherTimer.Start();
             _snifferService.Start();
 
-            AddStatusLog("[시작됨]");
+            AddStatusLog("[사냥 기록 시작]");
         }
 
-        // 1초마다 경과시간 업데이트
         private void OnTimerTick(object? sender, EventArgs e)
         {
             ElapsedTime = _stopwatch.Elapsed.ToString(@"hh\:mm\:ss");
+
+            // 1초마다 거상이 켜졌는지, 혹은 꺼졌는지 모니터링
+            if (_targetPid == -1)
+            {
+                FindTargetPid();
+            }
+            else
+            {
+                try
+                {
+                    var p = Process.GetProcessById(_targetPid);
+                    if (p == null || p.HasExited)
+                    {
+                        ClaimedPids.TryRemove(_targetPid, out _);
+                        _targetPid = -1;
+                        AddStatusLog("[클라이언트 종료 감지] 클라이언트 재실행을 대기합니다.");
+                    }
+                }
+                catch
+                {
+                    // 예외 발생 시 프로세스가 죽은 것으로 간주
+                    ClaimedPids.TryRemove(_targetPid, out _);
+                    _targetPid = -1;
+                }
+            }
         }
 
-        // 아이템 드롭 감지 시 호출
         private async void OnItemDropped(object? sender, DroppedItemEventArgs e)
         {
-            // 이 패킷 이벤트가 내가 추적하는 거상 클라이언트(PID)에서 온 것이 아니라면 무시! (완벽 분리 핵심)
-            if (_targetPid != -1 && e.Pid != _targetPid)
+            // 아직 PID를 못 찾았거나, 다른 클라이언트(PID)의 드랍 정보라면 완전히 무시!
+            if (_targetPid == -1 || e.Pid != _targetPid)
                 return;
 
-            // DB에 드롭 로그 저장
             await _databaseService.AddDropLogAsync(_sessionId, e.ItemName, e.Quantity);
 
-            // UI 스레드에서 목록 업데이트
             App.Current.Dispatcher.Invoke(() =>
             {
-                // 실시간 드롭 로그 추가
                 DropLogs.Insert(0, new DropLog
                 {
                     ItemName = e.ItemName,
@@ -158,7 +195,6 @@ namespace GersangTracker.ViewModels
                     DroppedAt = e.DroppedAt
                 });
 
-                // 아이템 합산 업데이트
                 var existing = ItemSummaries.FirstOrDefault(s => s.ItemName == e.ItemName);
                 if (existing != null)
                     existing.TotalQuantity += e.Quantity;
@@ -171,15 +207,18 @@ namespace GersangTracker.ViewModels
             });
         }
 
-        // 사냥 종료
         public async Task<int> StopAsync()
         {
             _dispatcherTimer.Stop();
             _stopwatch.Stop();
-            // _snifferService.Stop()은 여기서 호출하지 않습니다!
-            // 다른 탭도 같은 스니퍼를 쓰고 있기 때문에 전역 스니퍼를 끄면 안됩니다.
 
-            // 본인 이벤트만 리스너 해제 (메모리 릭 방지)
+            // 추적 중이던 PID 반환 (다른 세션에서 쓸 수 있도록)
+            if (_targetPid != -1)
+            {
+                ClaimedPids.TryRemove(_targetPid, out _);
+                _targetPid = -1;
+            }
+
             _snifferService.ItemDropped -= OnItemDropped;
 
             var endTime = _startTime + _stopwatch.Elapsed;
@@ -197,7 +236,6 @@ namespace GersangTracker.ViewModels
         }
     }
 
-    // 아이템 합산 모델 (화면 표시용)
     public partial class ItemSummary : ObservableObject
     {
         public string ItemName { get; set; } = string.Empty;

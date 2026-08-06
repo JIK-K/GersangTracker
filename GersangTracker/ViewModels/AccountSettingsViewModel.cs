@@ -17,7 +17,6 @@ namespace GersangTracker.ViewModels
         [ObservableProperty] private string _password;
         [ObservableProperty] private string _clientPath;
 
-        // 메인 뷰모델에서 삭제 여부를 알 수 있도록 플래그 제공
         public bool IsDeleted { get; private set; }
 
         public AccountSettingsViewModel(Account account, DatabaseService databaseService)
@@ -26,13 +25,17 @@ namespace GersangTracker.ViewModels
             _databaseService = databaseService;
 
             UserId = account.UserId ?? string.Empty;
-            Password = account.EncryptedPassword ?? string.Empty;
+
+            // DB의 암호화된 비밀번호를 화면에 뿌릴 때는 평문으로 복호화
+            Password = SecureDataHelper.Decrypt(account.EncryptedPassword ?? string.Empty);
+
             ClientPath = account.ClientInstance?.InstallPath ?? string.Empty;
         }
 
         [RelayCommand]
         private void BrowseClientPath()
         {
+            // 폴더 선택창
             var dialog = new OpenFolderDialog
             {
                 Title = "거상 클라이언트 설치 폴더 선택"
@@ -54,7 +57,9 @@ namespace GersangTracker.ViewModels
             }
 
             Account.UserId = UserId;
-            Account.EncryptedPassword = Password;
+
+            // 사용자가 입력한 평문 비밀번호를 강력하게 암호화(DPAPI)하여 저장
+            Account.EncryptedPassword = SecureDataHelper.Encrypt(Password);
 
             if (Account.ClientInstance == null)
             {
@@ -71,7 +76,6 @@ namespace GersangTracker.ViewModels
         [RelayCommand]
         private async Task DeleteAccountAsync(Window window)
         {
-            // 아직 만들어지지도 않은 계정을 삭제하려 하면 그냥 닫음
             if (Account.Id == 0)
             {
                 window.DialogResult = false;
