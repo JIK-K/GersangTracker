@@ -4,8 +4,9 @@ using GersangTracker.Models;
 using GersangTracker.Services;
 using GersangTracker.Views;
 using System.Collections.ObjectModel;
+using System.Threading.Tasks;
 using System.Windows;
-using Microsoft.Extensions.DependencyInjection;
+using System.Linq;
 
 namespace GersangTracker.ViewModels
 {
@@ -13,89 +14,87 @@ namespace GersangTracker.ViewModels
     {
         private readonly DatabaseService _databaseService;
 
-        public ObservableCollection<Monster> Monsters { get; } = new();
+        public ObservableCollection<ClientTabViewModel> Tabs { get; } = new();
 
         [ObservableProperty]
-        private Monster? _selectedMonster;
-
-        [ObservableProperty]
-        private string _newMonsterName = string.Empty;
+        private ClientTabViewModel? _selectedTab;
 
         public MainViewModel(DatabaseService databaseService)
         {
             _databaseService = databaseService;
-            // 앱 실행 시 목록 자동 로드
-            _ = LoadMonstersAsync();
+            _ = LoadTabsAsync();
         }
 
-        [RelayCommand]
-        private async Task LoadMonstersAsync()
+        private async Task LoadTabsAsync()
         {
-            var monsters = await _databaseService.GetMonstersAsync();
-            Monsters.Clear();
-            foreach (var monster in monsters)
-                Monsters.Add(monster);
-        }
+            var accounts = await _databaseService.GetAccountsAsync();
+            Tabs.Clear();
+            foreach (var acc in accounts)
+            {
+                Tabs.Add(new ClientTabViewModel(acc, _databaseService));
+            }
 
-        [RelayCommand]
-        private async Task AddMonsterAsync()
-        {
-            if (string.IsNullOrEmpty(NewMonsterName)) return;
-            try
+            if (Tabs.Any())
             {
-                await _databaseService.AddMonsterAsync(NewMonsterName);
-                NewMonsterName = string.Empty;
-                await LoadMonstersAsync();
-            }
-            catch (InvalidOperationException ex)
-            {
-                MessageBox.Show(ex.Message, "중복 오류", MessageBoxButton.OK, MessageBoxImage.Warning);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message, "오류", MessageBoxButton.OK, MessageBoxImage.Warning);
+                SelectedTab = Tabs.First();
             }
         }
 
+        // [게임 시작] 버튼용 스터브(뼈대) 커맨드
         [RelayCommand]
-        private async Task RenameMonsterAsync(Monster monster)
+        private void StartGame(ClientTabViewModel tab)
         {
-            if (string.IsNullOrEmpty(monster.Name)) return;
-            var dialog = new RenameDialog(monster.Name);
-            dialog.Owner = Application.Current.MainWindow;
-            if (dialog.ShowDialog() == true)
+            if (tab == null) return;
+            // TODO: 나중에 실제 클라이언트 프로세스 실행 로직으로 채워질 곳
+            MessageBox.Show($"[{tab.Header}] 클라이언트 실행 준비 중...", "게임 시작 알림", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        [RelayCommand]
+        private void AddNewTab()
+        {
+            var newAccount = new Account();
+            var settingsViewModel = new AccountSettingsViewModel(newAccount, _databaseService);
+            var window = new AccountSettingsWindow(settingsViewModel)
             {
-                await _databaseService.UpdateMonsterNameAsync(monster.Id, dialog.NewName);
-                await LoadMonstersAsync();
+                Owner = Application.Current.MainWindow
+            };
+
+            if (window.ShowDialog() == true && !settingsViewModel.IsDeleted)
+            {
+                var newTab = new ClientTabViewModel(newAccount, _databaseService);
+                Tabs.Add(newTab);
+                SelectedTab = newTab;
             }
         }
 
         [RelayCommand]
-        private async Task DeleteMonsterAsync(Monster monster)
+        private void OpenAccountSettings(ClientTabViewModel tab)
         {
-            await _databaseService.DeleteMonsterAsync(monster.Id);
-            await LoadMonstersAsync();
-        }
+            if (tab == null) return;
 
-        // 사냥 시작
-        [RelayCommand]
-        private async Task StartHunting(Monster monster)
-        {
+            var viewModel = new AccountSettingsViewModel(tab.Account, _databaseService);
+            var window = new AccountSettingsWindow(viewModel)
+            {
+                Owner = Application.Current.MainWindow
+            };
 
-            var snifferService = App.ServiceProvider.GetRequiredService<PacketSnifferService>();
-            var viewModel = new HuntingViewModel(monster, _databaseService, snifferService);
-            var window = new HuntingWindow(viewModel);
-            // 4번 - Owner 제거해서 창 독립
-            window.Show();
-        }
-
-        [RelayCommand]
-        private void OpenSessions(Monster monster)
-        {
-            var viewModel = new SessionViewModel(monster, _databaseService);
-            var window = new SessionWindow(viewModel);
-            // 4번 - Owner 제거해서 창 독립
-            window.Show();
+            if (window.ShowDialog() == true)
+            {
+                if (viewModel.IsDeleted)
+                {
+                    // 삭제된 계정이라면 탭 목록에서 제거
+                    Tabs.Remove(tab);
+                    if (SelectedTab == tab)
+                    {
+                        SelectedTab = Tabs.FirstOrDefault();
+                    }
+                }
+                else
+                {
+                    // 단순 설정 변경이라면 이름(헤더) 등 새로고침
+                    tab.RefreshHeader();
+                }
+            }
         }
     }
 }

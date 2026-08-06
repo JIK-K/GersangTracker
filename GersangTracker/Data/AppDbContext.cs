@@ -33,6 +33,11 @@ namespace GersangTracker.Data
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Name).IsRequired();
                 entity.Property(e => e.CreatedAt).IsRequired();
+
+                entity.HasOne(e => e.Account)
+                      .WithMany()
+                      .HasForeignKey(e => e.AccountId)
+                      .OnDelete(DeleteBehavior.Cascade);
             });
 
             // (몬스터 1 : 세션 N)
