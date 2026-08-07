@@ -42,6 +42,7 @@ namespace GersangTracker.ViewModels
         }
 
         // 게임 시작 커맨드 (실제 클라이언트 실행)
+        // 게임 시작 커맨드 (초고속 패치 적용 및 Run.exe 완전 우회)
         [RelayCommand]
         private async Task StartGame(ClientTabViewModel tab)
         {
@@ -54,45 +55,86 @@ namespace GersangTracker.ViewModels
                 return;
             }
 
-            string runExePath = System.IO.Path.Combine(installPath, "Run.exe");
-            if (!System.IO.File.Exists(runExePath))
+            GameServer server = GameServer.Korea_Live; // 임시로 본섭 고정 (추후 옵션 연동 가능)
+            var patchManager = new PatchManager();
+
+            // 1. 클라이언트와 서버의 버전 비교
+            int? currentVersion = patchManager.GetCurrentClientVersion(installPath);
+            int? latestVersion = await PatchReadmeHelper.GetLatestVersionAsync(server);
+
+            if (latestVersion.HasValue && (currentVersion == null || currentVersion.Value < latestVersion.Value))
             {
-                MessageBox.Show($"해당 경로에 거상 런처(Run.exe)가 존재하지 않습니다.\n설정하신 경로:\n{installPath}", "경로 오류", MessageBoxButton.OK, MessageBoxImage.Warning);
+                var result = MessageBox.Show(
+                    currentVersion == null ? "거상 클라이언트가 설치되어 있지 않습니다.\n초고속 전체 설치를 진행하시겠습니까?" : $"새로운 업데이트(v{latestVersion.Value})가 있습니다.\n초고속 패치를 진행하시겠습니까?",
+                    "업데이트 확인", MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+                if (result == MessageBoxResult.Yes)
+                {
+                    var patchWindow = new PatchWindow
+                    {
+                        Owner = Application.Current.MainWindow
+                    };
+
+                    // 창을 띄우면서 패치(또는 전체 설치) 시작!
+                    if (patchWindow.DataContext is PatchViewModel patchVM)
+                    {
+                        patchVM.StartPatch(server, currentVersion, latestVersion.Value, installPath);
+                    }
+
+                    patchWindow.ShowDialog(); // 패치가 끝날 때까지 대기
+
+                    // 2. 패치 완료 후 버전 다시 확인 (취소했거나 실패했다면 버전이 낮을 것임)
+                    currentVersion = patchManager.GetCurrentClientVersion(installPath);
+                    if (currentVersion == null || currentVersion.Value < latestVersion.Value)
+                    {
+                        MessageBox.Show("패치가 완료되지 않아 게임을 실행할 수 없습니다.", "알림", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+                }
+                else
+                {
+                    return; // 패치를 거부하면 게임 실행 취소
+                }
+            }
+
+            // 3. 패치가 정상적으로 완료되었다면 Run.exe 대신 gersang.exe를 직접 찾음
+            string gersangExePath = System.IO.Path.Combine(installPath, "gersang.exe");
+            if (!System.IO.File.Exists(gersangExePath))
+            {
+                MessageBox.Show("거상 실행 파일(gersang.exe)을 찾을 수 없습니다.", "경로 오류", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
+            // 4. 로그인 및 다이렉트 게임 실행
             string userId = tab.Account.UserId ?? string.Empty;
-            // 암호화된 비밀번호를 복호화해서 통신에 사용
             string plainPw = SecureDataHelper.Decrypt(tab.Account.EncryptedPassword ?? string.Empty);
-
             if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(plainPw))
             {
-                MessageBox.Show("계정 아이디 또는 비밀번호가 입력되지 않았습니다.\n우측 톱니바퀴 버튼을 눌러 정보를 입력해주세요.", "알림", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("계정 정보가 없습니다.", "알림", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
             try
             {
                 var authService = new GersangAuthService();
-
-                // 1. 백그라운드 로그인 후 토큰 획득
                 string cmdStr = await authService.GetGameStartTokenAsync(userId, plainPw);
 
-                // 2. 획득한 토큰을 런처(Run.exe)의 파라미터로 넘겨 관리자 권한으로 실행
+                // gersang.exe의 파라미터는 "서버타입 CmdStr" 형태를 요구합니다.
+                string serverParam = GameServerHelper.GetGameStartParam(server);
+
                 var processInfo = new System.Diagnostics.ProcessStartInfo
                 {
-                    FileName = runExePath,
-                    Arguments = cmdStr,
+                    FileName = gersangExePath,
+                    Arguments = $"{serverParam} {cmdStr}", // 예: "main 448+345+226+10..."
                     WorkingDirectory = installPath,
                     UseShellExecute = true,
-                    Verb = "runas"
+                    Verb = "runas" // 게임은 반드시 관리자 권한으로 실행
                 };
-
                 System.Diagnostics.Process.Start(processInfo);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"게임 실행 중 오류가 발생했습니다.\n\n{ex.Message}", "게임 시작 실패", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"오류 발생: {ex.Message}", "게임 시작 실패", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <ApplicationManifest>app.manifest</ApplicationManifest>
@@ -24,6 +24,9 @@
 
   <ItemGroup>
     <Content Include="favicon.ico" />
+    <Content Include="Assets\7za.exe">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>

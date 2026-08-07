@@ -94,13 +94,11 @@ namespace GersangTracker.ViewModels
                     string? pPath = p.MainModule?.FileName?.Replace("/", "\\");
                     if (string.Equals(pPath, expectedExePath, StringComparison.OrdinalIgnoreCase))
                     {
-                        isMatch = true; // 경로가 정확히 일치함
+                        isMatch = true; 
                     }
                 }
                 catch
                 {
-                    // [핵심] 안티치트(보안 프로그램)가 경로 접근을 차단하여 에러가 났을 경우!
-                    // 어차피 중복 할당 방지 처리가 되어있으므로, 남은 빈 거상 클라이언트라고 간주하고 그냥 할당합니다.
                     isMatch = true;
                 }
 

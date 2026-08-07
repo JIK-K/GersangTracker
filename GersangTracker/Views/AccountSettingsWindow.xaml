@@ -3,7 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="계정 설정" Height="340" Width="350"
         WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
-        Style="{StaticResource AnimatedWindowStyle}">
+        Style="{StaticResource AnimatedWindowStyle}"
+        Background="{StaticResource BackgroundPrimary}">
     <Grid Margin="20">
         <StackPanel>
             <TextBlock Text="계정 설정" FontSize="18" Foreground="{StaticResource TextPrimary}" FontWeight="Bold" Margin="0,0,0,20"/>
