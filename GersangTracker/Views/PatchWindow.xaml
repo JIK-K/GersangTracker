@@ -22,8 +22,8 @@
 
         <TextBlock Text="{Binding StatusText}" FontSize="18" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,10"/>
 
-        <!-- 프로그레스 바(애니메이션 효과 포함) -->
-        <ProgressBar Grid.Row="1" Value="{Binding ProgressValue}" Minimum="0" Maximum="100" Height="25" Margin="0,10,0,10" IsIndeterminate="{Binding ProgressValue, Converter={StaticResource IndeterminateConverter}, FallbackValue=False}" />
+        <!-- 프로그레스 바 (오류를 일으키던 IsIndeterminate 속성 제거 완료) -->
+        <ProgressBar Grid.Row="1" Value="{Binding ProgressValue}" Minimum="0" Maximum="100" Height="25" Margin="0,10,0,10" />
 
         <TextBlock Grid.Row="2" Text="{Binding DetailText}" FontSize="14" HorizontalAlignment="Center" Foreground="Gray" TextTrimming="CharacterEllipsis"/>
 
