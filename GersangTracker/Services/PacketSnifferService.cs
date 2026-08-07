@@ -13,6 +13,7 @@ namespace GersangTracker.Services
 {
     public class DroppedItemEventArgs : EventArgs
     {
+        public int Pid { get; set; } // 추가됨: 어떤 프로세스(클라이언트)에서 드랍된 것인지 식별
         public string ItemName { get; set; } = string.Empty;
         public int Quantity { get; set; }
         public DateTime DroppedAt { get; set; }
@@ -20,8 +21,10 @@ namespace GersangTracker.Services
 
     public class PacketSnifferService : IDisposable
     {
+        // _gersangPid 단일 변수 대신 포트와 PID 매핑을 저장하는 딕셔너리로 대체
+        private Dictionary<ushort, int> _portToPid = new Dictionary<ushort, int>();
         private HashSet<ushort> _gersangPorts = new HashSet<ushort>();
-        private int _gersangPid = -1;
+
         private bool _isRunning = false;
         private CancellationTokenSource _cts = new CancellationTokenSource();
         private ItemDatabaseService _dbService;
@@ -58,13 +61,14 @@ namespace GersangTracker.Services
         {
             StatusLog?.Invoke("거상 트래커 준비 중...");
 
-            while (_gersangPid == -1 && !token.IsCancellationRequested)
+            bool foundAnyGersang = false;
+            while (!foundAnyGersang && !token.IsCancellationRequested)
             {
                 var processes = Process.GetProcessesByName("gersang");
                 if (processes.Length > 0)
                 {
-                    _gersangPid = processes[0].Id;
-                    StatusLog?.Invoke($"거상 프로세스 감지됨 (PID: {_gersangPid})");
+                    foundAnyGersang = true;
+                    StatusLog?.Invoke($"거상 프로세스 감지됨 (현재 {processes.Length}개 실행 중)");
                 }
                 else
                 {
@@ -118,6 +122,15 @@ namespace GersangTracker.Services
             {
                 try
                 {
+                    // 현재 실행 중인 모든 거상 프로세스 PID 수집
+                    var processes = Process.GetProcessesByName("gersang");
+                    if (processes.Length == 0)
+                    {
+                        Thread.Sleep(3000);
+                        continue;
+                    }
+                    var activePids = processes.Select(p => p.Id).ToHashSet();
+
                     var netstat = new Process
                     {
                         StartInfo = new ProcessStartInfo
@@ -134,20 +147,22 @@ namespace GersangTracker.Services
                     netstat.WaitForExit();
 
                     var lines = output.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-                    var newPorts = new HashSet<ushort>();
+                    var newPortToPid = new Dictionary<ushort, int>();
 
                     foreach (var line in lines)
                     {
-                        if (line.Contains(_gersangPid.ToString()))
+                        var parts = Regex.Split(line.Trim(), @"\s+");
+                        if (parts.Length >= 5)
                         {
-                            var parts = Regex.Split(line.Trim(), @"\s+");
-                            if (parts.Length >= 4)
+                            string local = parts[1];
+                            string pidStr = parts[4];
+
+                            if (int.TryParse(pidStr, out int pid) && activePids.Contains(pid))
                             {
-                                string local = parts[1];
                                 var localParts = local.Split(':');
                                 if (localParts.Length >= 2 && ushort.TryParse(localParts.Last(), out ushort port))
                                 {
-                                    newPorts.Add(port);
+                                    newPortToPid[port] = pid;
                                 }
                             }
                         }
@@ -155,12 +170,13 @@ namespace GersangTracker.Services
 
                     lock (_gersangPorts)
                     {
-                        foreach (var port in newPorts)
+                        foreach (var kvp in newPortToPid)
                         {
-                            if (!_gersangPorts.Contains(port))
+                            if (!_portToPid.ContainsKey(kvp.Key) || _portToPid[kvp.Key] != kvp.Value)
                             {
-                                _gersangPorts.Add(port);
-                                StatusLog?.Invoke($"거상 통신 포트 감지: {port}");
+                                _portToPid[kvp.Key] = kvp.Value;
+                                _gersangPorts.Add(kvp.Key);
+                                StatusLog?.Invoke($"거상 통신 포트 감지: {kvp.Key} (PID: {kvp.Value})");
                             }
                         }
                     }
@@ -216,7 +232,7 @@ namespace GersangTracker.Services
                         _seenSequences[connectionKey] = new HashSet<uint>();
 
                     if (_seenSequences[connectionKey].Contains(seq))
-                        return; 
+                        return;
 
                     _seenSequences[connectionKey].Add(seq);
 
@@ -225,12 +241,20 @@ namespace GersangTracker.Services
                 }
             }
 
+            int targetPid = -1;
             bool isGersangPacket = false;
+
             lock (_gersangPorts)
             {
-                if (_gersangPorts.Contains(srcPort) || _gersangPorts.Contains(dstPort))
+                if (_portToPid.TryGetValue(srcPort, out int pid))
                 {
                     isGersangPacket = true;
+                    targetPid = pid;
+                }
+                else if (_portToPid.TryGetValue(dstPort, out pid))
+                {
+                    isGersangPacket = true;
+                    targetPid = pid;
                 }
             }
 
@@ -238,12 +262,12 @@ namespace GersangTracker.Services
             {
                 lock (_connectionBuffers)
                 {
-                    ParseGersangPacket(connectionKey, payload);
+                    ParseGersangPacket(connectionKey, payload, targetPid);
                 }
             }
         }
 
-        private void ParseGersangPacket(string connectionKey, byte[] payload)
+        private void ParseGersangPacket(string connectionKey, byte[] payload, int targetPid)
         {
             if (!_connectionBuffers.ContainsKey(connectionKey))
                 _connectionBuffers[connectionKey] = new List<byte>();
@@ -280,7 +304,7 @@ namespace GersangTracker.Services
                     byte[] fullPacket = buffer.Take(packetLength).ToArray();
                     buffer.RemoveRange(0, packetLength);
 
-                    ProcessFullPacket(fullPacket);
+                    ProcessFullPacket(fullPacket, targetPid);
                 }
                 else
                 {
@@ -289,13 +313,12 @@ namespace GersangTracker.Services
             }
         }
 
-        private void ProcessFullPacket(byte[] payload)
+        private void ProcessFullPacket(byte[] payload, int targetPid)
         {
             if (payload.Length < 5) return;
 
             string hex = BitConverter.ToString(payload).Replace("-", " ");
             string header = $"{payload[3]:X2} {payload[4]:X2}";
-            //File.AppendAllText("FullPacketLog.txt", $"[{DateTime.Now:HH:mm:ss.fff}] [{header}] Length:{payload.Length} | {hex}\n");
 
             for (int i = 0; i <= payload.Length - 62; i++)
             {
@@ -317,12 +340,13 @@ namespace GersangTracker.Services
                         {
                             ItemDropped?.Invoke(this, new DroppedItemEventArgs
                             {
+                                Pid = targetPid,
                                 ItemName = itemName,
                                 Quantity = (int)qty,
                                 DroppedAt = DateTime.Now
                             });
 
-                            StatusLog?.Invoke($"[아이템 획득] {itemName} {qty}개를 획득했습니다!");
+                            StatusLog?.Invoke($"[아이템 획득] {itemName} {qty}개를 획득했습니다! (PID: {targetPid})");
                         }
                     }
                 }

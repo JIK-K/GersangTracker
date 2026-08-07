@@ -1,4 +1,4 @@
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GersangTracker.Models;
 using GersangTracker.Services;
@@ -7,24 +7,19 @@ using System.Text.RegularExpressions;
 
 namespace GersangTracker.ViewModels
 {
-    // 가격 입력 화면 표시용 임시 모델 (뷰모델 내 헬퍼 모델)
     public partial class PriceItem : ObservableObject
     {
         public string ItemName { get; set; } = string.Empty;
 
-        // 수량 - 편집 가능하도록 변경
         [ObservableProperty]
         private int _totalQuantity;
 
-        // 단가 입력값 - 변경 시 UI 자동 반영
         [ObservableProperty]
         private string _unitPriceInput = string.Empty;
 
-        // 입력된 단가 (숫자 변환)
         public long UnitPrice =>
             long.TryParse(UnitPriceInput.Replace(",", ""), out long price) ? price : 0;
 
-        // 합계
         public long Total => UnitPrice * TotalQuantity;
     }
 
@@ -34,14 +29,11 @@ namespace GersangTracker.ViewModels
         private readonly int _sessionId;
         private readonly Monster _monster;
 
-        // 가격 입력 목록
         public ObservableCollection<PriceItem> PriceItems { get; } = new();
 
-        // 몬스터명 표시
         public string MonsterName => _monster.Name;
         public Monster Monster => _monster;
 
-        // 아이템 직접 추가용
         [ObservableProperty]
         private string _newItemName = string.Empty;
 
@@ -64,7 +56,6 @@ namespace GersangTracker.ViewModels
             }
         }
 
-        // 이전 세션 단가 자동 불러오기
         public async Task LoadPreviousPricesAsync()
         {
             var savedPrices = await _databaseService.GetItemPricesByMonsterAsync(_monster.Id);
@@ -77,7 +68,6 @@ namespace GersangTracker.ViewModels
             }
         }
 
-        // 아이템 직접 추가
         [RelayCommand]
         private void AddItem()
         {
@@ -99,25 +89,21 @@ namespace GersangTracker.ViewModels
             NewItemQuantity = "1";
         }
 
-        // 아이템 삭제
         [RelayCommand]
         private void RemoveItem(PriceItem item)
         {
             PriceItems.Remove(item);
         }
 
-        // 계산하기 (정산 및 저장)
         [RelayCommand]
         private async Task CalculateAsync()
         {
-            // 1. 전역 아이템 단가 저장 (몬스터별 설정 유지용)
             foreach (var item in PriceItems)
             {
                 if (item.UnitPrice > 0)
                     await _databaseService.SaveItemPriceAsync(_monster.Id, item.ItemName, item.UnitPrice);
             }
 
-            // 2. 현재 세션의 드롭 로그 동기화 (수량, 단가, 신규 아이템 반영)
             var syncItems = PriceItems.Select(p => new PriceItemSummary
             {
                 ItemName = p.ItemName,
@@ -127,22 +113,18 @@ namespace GersangTracker.ViewModels
 
             await _databaseService.SyncDropLogsAsync(_sessionId, syncItems);
 
-            // 3. 세션 정보 업데이트 (총수익만 업데이트, 종료 시간은 사냥 종료 시점 유지)
             long totalProfit = PriceItems.Sum(p => p.Total);
             await _databaseService.UpdateSessionProfitAsync(_sessionId, totalProfit);
         }
 
-        // 총수익
         public long TotalProfit => PriceItems.Sum(p => p.Total);
 
-        // 세션 조회
         public async Task<Session> GetSessionAsync()
         {
             var session = await _databaseService.GetSessionsByMonsterAsync(_monster.Id);
             return session.First(s => s.Id == _sessionId);
         }
 
-        // 드롭 로그 조회
         public async Task<List<DropLog>> GetDropLogsAsync()
         {
             return await _databaseService.GetDropLogsBySessionAsync(_sessionId);

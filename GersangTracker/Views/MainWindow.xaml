@@ -17,259 +17,214 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <!-- 커스텀 타이틀바 -->
             <Border Grid.Row="0" Background="{StaticResource BackgroundSecondary}"
                     CornerRadius="12,12,0,0"
                     MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
                 <Grid Margin="16,0,8,0">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <!-- 로고 닷 -->
                         <Ellipse Width="8" Height="8" Fill="{StaticResource AccentColor}" Margin="0,0,8,0"/>
-                        <TextBlock Text="GersangTracker"
-                                   Foreground="{StaticResource TextPrimary}"
-                                   FontSize="13" FontWeight="Bold"
-                                   VerticalAlignment="Center"/>
+                        <TextBlock Text="GersangTracker" Foreground="{StaticResource TextPrimary}" FontSize="13" FontWeight="Bold" VerticalAlignment="Center"/>
                     </StackPanel>
-                    <StackPanel Orientation="Horizontal"
-                                HorizontalAlignment="Right"
-                                VerticalAlignment="Center">
-                        <!-- 최소화 -->
-                        <Button Style="{StaticResource TitleBarButton}"
-                                Click="MinimizeButton_Click">
-                            <Path Data="M 8,12 L 24,12" Stroke="{StaticResource TextSecondary}" StrokeThickness="1.5"
-                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <Button Style="{StaticResource TitleBarButton}" Click="MinimizeButton_Click">
+                            <Path Data="M 8,12 L 24,12" Stroke="{StaticResource TextSecondary}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
                         </Button>
-                        <!-- 닫기 -->
-                        <Button Style="{StaticResource CloseButton}"
-                                Click="CloseButton_Click">
-                            <Path Data="M 8,8 L 22,22 M 22,8 L 8,22"
-                                  Stroke="{StaticResource TextSecondary}" StrokeThickness="1.5"
-                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                        <Button Style="{StaticResource CloseButton}" Click="CloseButton_Click">
+                            <Path Data="M 8,8 L 22,22 M 22,8 L 8,22" Stroke="{StaticResource TextSecondary}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
                         </Button>
                     </StackPanel>
                 </Grid>
             </Border>
 
-            <!-- 메인 레이아웃 -->
             <Grid Grid.Row="1">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="200"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
+                <TabControl ItemsSource="{Binding Tabs}"
+                            SelectedItem="{Binding SelectedTab}"
+                            Style="{StaticResource ChromeTabControlStyle}">
 
-                <!-- 사이드바 -->
-                <Border Grid.Column="0" Background="{StaticResource BackgroundSecondary}"
-                        CornerRadius="0,0,0,12">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="*"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
+                    <TabControl.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Header}" Margin="10,0"/>
+                        </DataTemplate>
+                    </TabControl.ItemTemplate>
 
-                        <!-- 몬스터 추가 폼 -->
-                        <StackPanel Grid.Row="0" Margin="16">
-                            <!-- 섹션 레이블 -->
-                            <TextBlock Text="몬스터 추가"
-                                       Style="{StaticResource SectionHeaderLabel}"
-                                       Margin="0,16,0,10"/>
-
-                            <!-- 입력창 -->
-                            <TextBox Style="{StaticResource ModernTextBox}"
-                                     Height="42" 
-                                     Text="{Binding NewMonsterName, UpdateSourceTrigger=PropertyChanged}"
-                                     Margin="0,0,0,10">
-                                <TextBox.InputBindings>
-                                    <KeyBinding Key="Return" Command="{Binding AddMonsterCommand}"/>
-                                </TextBox.InputBindings>
-                            </TextBox>
-                            <Button Style="{StaticResource SidebarButton}"
-                                    Command="{Binding AddMonsterCommand}">
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <iconPacks:PackIconMaterial Kind="Plus" Width="14" Height="14" Margin="0,0,6,0"/>
-                                    <TextBlock Text="추가"/>
-                                </StackPanel>
-                            </Button>
-                        </StackPanel>
-
-                        <!-- 하단 몬스터 개수 카운터 -->
-                        <Border Grid.Row="1"
-                                Background="{StaticResource BackgroundTertiary}"
-                                Margin="12,0,12,14"
-                                CornerRadius="8"
-                                Padding="14,10">
+                    <TabControl.ContentTemplate>
+                        <DataTemplate>
                             <Grid>
-                                <StackPanel VerticalAlignment="Center">
-                                    <TextBlock Text="등록된 몬스터"
-                                               Style="{StaticResource SectionHeaderLabel}"
-                                               Margin="0,0,0,2"/>
-                                    <TextBlock Text="{Binding Monsters.Count}"
-                                               Foreground="{StaticResource AccentColor}"
-                                               FontSize="22" FontWeight="Bold"/>
-                                </StackPanel>
-                                <iconPacks:PackIconMaterial Kind="Sword"
-                                                            Width="28" Height="28"
-                                                            HorizontalAlignment="Right"
-                                                            VerticalAlignment="Center"
-                                                            Foreground="{StaticResource AccentColor}"
-                                                            Opacity="0.2"/>
-                            </Grid>
-                        </Border>
-                    </Grid>
-                </Border>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="200"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
 
-                <!-- 메인 컨텐츠 -->
-                <Grid Grid.Column="1">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="52"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
+                                <Border Grid.Column="0" Background="{StaticResource BackgroundSecondary}" CornerRadius="0,0,0,12">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
 
-                    <!-- 컨텐츠 헤더 -->
-                    <Border Grid.Row="0" Background="{StaticResource BackgroundPrimary}"
-                            BorderBrush="{StaticResource SeparatorColor}"
-                            BorderThickness="0,0,0,1"
-                            Padding="24,0,16,0">
-                        <Grid>
-                            <TextBlock Text="몬스터 목록"
-                                       Foreground="{StaticResource TextPrimary}"
-                                       FontSize="16" FontWeight="Bold"
-                                       VerticalAlignment="Center"/>
-                            <TextBlock Foreground="{StaticResource TextSecondary}"
-                                       FontSize="12"
-                                       HorizontalAlignment="Right"
-                                       VerticalAlignment="Center">
-                                <Run Text="{Binding Monsters.Count, Mode=OneWay}"/>
-                                <Run Text="개"/>
-                            </TextBlock>
-                        </Grid>
-                    </Border>
+                                        <StackPanel Grid.Row="0" Margin="16">
+                                            <TextBlock Text="몬스터 추가" Style="{StaticResource SectionHeaderLabel}" Margin="0,16,0,10"/>
+                                            <TextBox Style="{StaticResource ModernTextBox}" Height="42" 
+                                                     Text="{Binding NewMonsterName, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10">
+                                                <TextBox.InputBindings>
+                                                    <KeyBinding Key="Return" Command="{Binding AddMonsterCommand}"/>
+                                                </TextBox.InputBindings>
+                                            </TextBox>
+                                            <Button Style="{StaticResource SidebarButton}" Command="{Binding AddMonsterCommand}">
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <iconPacks:PackIconMaterial Kind="Plus" Width="14" Height="14" Margin="0,0,6,0"/>
+                                                    <TextBlock Text="추가"/>
+                                                </StackPanel>
+                                            </Button>
+                                        </StackPanel>
 
-                    <!-- 몬스터 카드 그리드 -->
-                    <ScrollViewer Grid.Row="1" Margin="12">
-                        <ItemsControl ItemsSource="{Binding Monsters}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <WrapPanel/>
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <!-- 카드 wrapper — hover 효과 -->
-                                    <Border x:Name="card"
-                                            Width="220" Margin="8"
-                                            Background="{StaticResource BackgroundSecondary}"
-                                            CornerRadius="12"
-                                            Cursor="Arrow">
-                                        <Border.Effect>
-                                            <DropShadowEffect Color="Black"
-                                                Opacity="0.25"
-                                                BlurRadius="18"
-                                                ShadowDepth="3"/>
-                                        </Border.Effect>
-                                        <Grid>
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition Height="Auto"/>
-                                                <RowDefinition Height="Auto"/>
-                                                <RowDefinition Height="Auto"/>
-                                            </Grid.RowDefinitions>
-
-                                            <!-- 카드 헤더 (그라디언트) -->
-                                            <Border Grid.Row="0"
-                                                    Background="{StaticResource AccentGradient}"
-                                                    CornerRadius="12,12,0,0"
-                                                    Padding="16,14">
-                                                <Grid>
-                                                    <TextBlock Text="{Binding Name}"
-                                                               Foreground="White"
-                                                               FontSize="16" FontWeight="Bold"
-                                                               TextWrapping="Wrap"/>
-                                                    <iconPacks:PackIconMaterial Kind="Sword"
-                                                                Width="18" Height="18"
-                                                                HorizontalAlignment="Right"
-                                                                VerticalAlignment="Top"
-                                                                Foreground="White"
-                                                                Opacity="0.35"/>
-                                                </Grid>
-                                            </Border>
-
-                                            <!-- 액션 버튼 그룹 1 -->
-                                            <StackPanel Grid.Row="1" Margin="12,12,12,4">
-                                                <Button Style="{StaticResource PrimaryButton}"
-                                                        HorizontalAlignment="Stretch"
-                                                        FontSize="12" FontWeight="Bold"
-                                                        Padding="10,9"
-                                                        Margin="0,0,0,6"
-                                                        Command="{Binding DataContext.StartHuntingCommand,
-                                                            RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                        CommandParameter="{Binding}">
-                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                        <iconPacks:PackIconMaterial Kind="SwordCross" Width="14" Height="14" Margin="0,0,6,0"/>
-                                                        <TextBlock Text="사냥 시작"/>
-                                                    </StackPanel>
-                                                </Button>
-                                                <Grid Margin="0,0,0,6">
-                                                    <Button 
-                                                            Style="{StaticResource SecondaryButton}"
-                                                            HorizontalAlignment="Stretch"
-                                                            Command="{Binding DataContext.OpenSessionsCommand,
-                                                                RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                            CommandParameter="{Binding}">
-                                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                            <iconPacks:PackIconMaterial Kind="ClipboardText" Width="12" Height="12" Margin="0,0,4,0"/>
-                                                            <TextBlock Text="세션"/>
-                                                        </StackPanel>
-                                                    </Button>
-                                                </Grid>
-                                            </StackPanel>
-
-                                            <!-- 액션 버튼 그룹 2 (이름변경/삭제) -->
-                                            <Grid Grid.Row="2" Margin="12,0,12,12">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="6"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                </Grid.ColumnDefinitions>
-                                                <Button Grid.Column="0"
-                                                        Style="{StaticResource SecondaryButton}"
-                                                        HorizontalAlignment="Stretch"
-                                                        FontSize="10" Padding="8,6"
-                                                        Command="{Binding DataContext.RenameMonsterCommand,
-                                                            RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                        CommandParameter="{Binding}">
-                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                        <iconPacks:PackIconMaterial Kind="Pencil" Width="10" Height="10" Margin="0,0,4,0"/>
-                                                        <TextBlock Text="이름변경"/>
-                                                    </StackPanel>
-                                                </Button>
-                                                <Button Grid.Column="2"
-                                                        Style="{StaticResource DangerButton}"
-                                                        HorizontalAlignment="Stretch"
-                                                        FontSize="10" Padding="8,6"
-                                                        Command="{Binding DataContext.DeleteMonsterCommand,
-                                                            RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                        CommandParameter="{Binding}">
-                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                        <iconPacks:PackIconMaterial Kind="Delete" Width="10" Height="10" Margin="0,0,4,0"/>
-                                                        <TextBlock Text="삭제"/>
-                                                    </StackPanel>
-                                                </Button>
+                                        <Border Grid.Row="1" Background="{StaticResource BackgroundTertiary}" Margin="12,0,12,14" CornerRadius="8" Padding="14,10">
+                                            <Grid>
+                                                <StackPanel VerticalAlignment="Center">
+                                                    <TextBlock Text="등록된 몬스터" Style="{StaticResource SectionHeaderLabel}" Margin="0,0,0,2"/>
+                                                    <TextBlock Text="{Binding Monsters.Count}" Foreground="{StaticResource AccentColor}" FontSize="22" FontWeight="Bold"/>
+                                                </StackPanel>
+                                                <iconPacks:PackIconMaterial Kind="Sword" Width="28" Height="28" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{StaticResource AccentColor}" Opacity="0.2"/>
                                             </Grid>
+                                        </Border>
+                                    </Grid>
+                                </Border>
+
+                                <Grid Grid.Column="1">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="52"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+
+                                    <Border Grid.Row="0" Background="{StaticResource BackgroundPrimary}" BorderBrush="{StaticResource SeparatorColor}" BorderThickness="0,0,0,1" Padding="24,0,16,0">
+                                        <Grid>
+                                            <TextBlock Text="몬스터 목록" Foreground="{StaticResource TextPrimary}" FontSize="16" FontWeight="Bold" VerticalAlignment="Center"/>
+                                            <TextBlock Foreground="{StaticResource TextSecondary}" FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                                <Run Text="{Binding Monsters.Count, Mode=OneWay}"/>
+                                                <Run Text="개"/>
+                                            </TextBlock>
                                         </Grid>
                                     </Border>
-                                    <!-- 카드 hover 트리거 -->
-                                    <DataTemplate.Triggers>
-                                        <Trigger SourceName="card" Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="card" Property="Background" Value="{StaticResource BackgroundTertiary}"/>
-                                            <Setter TargetName="card" Property="Effect" Value="{StaticResource CardHoverShadow}"/>
-                                        </Trigger>
-                                    </DataTemplate.Triggers>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </ScrollViewer>
-                </Grid>
+
+                                    <ScrollViewer Grid.Row="1" Margin="12">
+                                        <ItemsControl ItemsSource="{Binding Monsters}">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <WrapPanel/>
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border x:Name="card" Width="220" Margin="8" Background="{StaticResource BackgroundSecondary}" CornerRadius="12" Cursor="Arrow">
+                                                        <Border.Effect>
+                                                            <DropShadowEffect Color="Black" Opacity="0.25" BlurRadius="18" ShadowDepth="3"/>
+                                                        </Border.Effect>
+                                                        <Grid>
+                                                            <Grid.RowDefinitions>
+                                                                <RowDefinition Height="Auto"/>
+                                                                <RowDefinition Height="Auto"/>
+                                                                <RowDefinition Height="Auto"/>
+                                                            </Grid.RowDefinitions>
+
+                                                            <Border Grid.Row="0" Background="{StaticResource AccentGradient}" CornerRadius="12,12,0,0" Padding="16,14">
+                                                                <Grid>
+                                                                    <TextBlock Text="{Binding Name}" Foreground="White" FontSize="16" FontWeight="Bold" TextWrapping="Wrap"/>
+                                                                    <iconPacks:PackIconMaterial Kind="Sword" Width="18" Height="18" HorizontalAlignment="Right" VerticalAlignment="Top" Foreground="White" Opacity="0.35"/>
+                                                                </Grid>
+                                                            </Border>
+
+                                                            <StackPanel Grid.Row="1" Margin="12,12,12,4">
+                                                                <Button Style="{StaticResource PrimaryButton}" HorizontalAlignment="Stretch" FontSize="12" FontWeight="Bold" Padding="10,9" Margin="0,0,0,6"
+                                                                        Command="{Binding DataContext.StartHuntingCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}">
+                                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                                        <iconPacks:PackIconMaterial Kind="SwordCross" Width="14" Height="14" Margin="0,0,6,0"/>
+                                                                        <TextBlock Text="사냥 시작"/>
+                                                                    </StackPanel>
+                                                                </Button>
+                                                                <Grid Margin="0,0,0,6">
+                                                                    <Button Style="{StaticResource SecondaryButton}" HorizontalAlignment="Stretch"
+                                                                            Command="{Binding DataContext.OpenSessionsCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}">
+                                                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                                            <iconPacks:PackIconMaterial Kind="ClipboardText" Width="12" Height="12" Margin="0,0,4,0"/>
+                                                                            <TextBlock Text="세션"/>
+                                                                        </StackPanel>
+                                                                    </Button>
+                                                                </Grid>
+                                                            </StackPanel>
+
+                                                            <Grid Grid.Row="2" Margin="12,0,12,12">
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="*"/>
+                                                                    <ColumnDefinition Width="6"/>
+                                                                    <ColumnDefinition Width="*"/>
+                                                                </Grid.ColumnDefinitions>
+                                                                <Button Grid.Column="0" Style="{StaticResource SecondaryButton}" HorizontalAlignment="Stretch" FontSize="10" Padding="8,6"
+                                                                        Command="{Binding DataContext.RenameMonsterCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}">
+                                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                                        <iconPacks:PackIconMaterial Kind="Pencil" Width="10" Height="10" Margin="0,0,4,0"/>
+                                                                        <TextBlock Text="이름변경"/>
+                                                                    </StackPanel>
+                                                                </Button>
+                                                                <Button Grid.Column="2" Style="{StaticResource DangerButton}" HorizontalAlignment="Stretch" FontSize="10" Padding="8,6"
+                                                                        Command="{Binding DataContext.DeleteMonsterCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}">
+                                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                                        <iconPacks:PackIconMaterial Kind="Delete" Width="10" Height="10" Margin="0,0,4,0"/>
+                                                                        <TextBlock Text="삭제"/>
+                                                                    </StackPanel>
+                                                                </Button>
+                                                            </Grid>
+                                                        </Grid>
+                                                    </Border>
+                                                    <DataTemplate.Triggers>
+                                                        <Trigger SourceName="card" Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="card" Property="Background" Value="{StaticResource BackgroundTertiary}"/>
+                                                            <Setter TargetName="card" Property="Effect" Value="{StaticResource CardHoverShadow}"/>
+                                                        </Trigger>
+                                                    </DataTemplate.Triggers>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </ScrollViewer>
+                                </Grid>
+                            </Grid>
+                        </DataTemplate>
+                    </TabControl.ContentTemplate>
+                </TabControl>
+
+                <!-- 우측 상단 탭별 기능 버튼들 -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,10,16,0">
+
+                    <!-- 1. 게임 시작 버튼 -->
+                    <Button Height="30" Padding="12,0" Margin="0,0,8,0"
+                            Style="{StaticResource PrimaryButton}"
+                            Background="{StaticResource SuccessGradient}"
+                            Command="{Binding StartGameCommand}"
+                            CommandParameter="{Binding SelectedTab}">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <iconPacks:PackIconMaterial Kind="Play" Width="12" Height="12" Margin="0,0,4,0"/>
+                            <TextBlock Text="게임 시작" FontSize="11" FontWeight="Bold"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- 2. 계정 추가 버튼 -->
+                    <Button Height="30" Padding="12,0" Margin="0,0,8,0"
+                            Style="{StaticResource PrimaryButton}"
+                            Command="{Binding AddNewTabCommand}">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <iconPacks:PackIconMaterial Kind="Plus" Width="12" Height="12" Margin="0,0,4,0"/>
+                            <TextBlock Text="계정추가" FontSize="11" FontWeight="Bold"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- 3. 현재 탭 계정 설정 톱니바퀴 -->
+                    <Button Width="30" Height="30"
+                            Command="{Binding OpenAccountSettingsCommand}"
+                            CommandParameter="{Binding SelectedTab}"
+                            Style="{StaticResource TitleBarButton}">
+                        <iconPacks:PackIconMaterial Kind="Cog" Width="16" Height="16"/>
+                    </Button>
+                </StackPanel>
             </Grid>
         </Grid>
     </Border>
-
 </Window>

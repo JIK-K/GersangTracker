@@ -1,28 +1,72 @@
-using GersangTracker.Data;
+﻿using GersangTracker.Data;
 using GersangTracker.Models;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace GersangTracker.Services
 {
     public class DatabaseService
     {
-        // [Monster] - [Read] 몬스터 전체 조회
-        public async Task<List<Monster>> GetMonstersAsync()
+        // [Account] - 계정 전체 로드 (ClientInstance도 함께 불러옴)
+        public async Task<List<Account>> GetAccountsAsync()
         {
             using var db = new AppDbContext();
-            return await db.Monsters.ToListAsync();
+            return await db.Account
+                           .Include(a => a.ClientInstance)
+                           .ToListAsync();
+        }
+
+        // [Account] - 계정 생성 및 수정
+        public async Task AddOrUpdateAccountAsync(Account account)
+        {
+            using var db = new AppDbContext();
+            if (account.Id == 0)
+            {
+                // 새 계정
+                db.Account.Add(account);
+            }
+            else
+            {
+                // 기존 계정
+                db.Account.Update(account);
+            }
+            await db.SaveChangesAsync();
+        }
+
+        // [Account] - 계정 삭제 (연관된 설정, 몬스터 기록 모두 함께 삭제됨)
+        public async Task DeleteAccountAsync(int accountId)
+        {
+            using var db = new AppDbContext();
+            var account = await db.Account.FindAsync(accountId);
+            if (account != null)
+            {
+                db.Account.Remove(account);
+                await db.SaveChangesAsync();
+            }
+        }
+
+        // [Monster] - [Read] 계정별 몬스터 전체 조회
+        public async Task<List<Monster>> GetMonstersByAccountIdAsync(int accountId)
+        {
+            using var db = new AppDbContext();
+            return await db.Monsters
+                           .Where(m => m.AccountId == accountId)
+                           .ToListAsync();
         }
 
         // [Monster] - [Create] 몬스터 추가
-        public async Task AddMonsterAsync(string name)
+        public async Task AddMonsterAsync(int accountId, string name)
         {
             using var db = new AppDbContext();
-            var isExist = await db.Monsters.AnyAsync(m => m.Name == name);
+            var isExist = await db.Monsters.AnyAsync(m => m.AccountId == accountId && m.Name == name);
             if (isExist)
             {
-                throw new InvalidOperationException("이미 존재하는 몬스터 이름입니다.");
+                throw new InvalidOperationException("이미 존재하는 몬스터 이름 입니다.");
             }
-            db.Monsters.Add(new Monster { Name = name });
+            db.Monsters.Add(new Monster { AccountId = accountId, Name = name });
             await db.SaveChangesAsync();
         }
 
@@ -103,7 +147,7 @@ namespace GersangTracker.Services
             await db.SaveChangesAsync();
         }
 
-        // [DropLog] - [Create] 드롭 로그 추가
+        // [DropLog] - [Create] 드랍 로그 추가
         public async Task AddDropLogAsync(int sessionId, string itemName, int quantity)
         {
             try
@@ -144,7 +188,7 @@ namespace GersangTracker.Services
                 .ToListAsync();
         }
 
-        // [ItemPrice] - [Create/Update] 아이템 단가 저장 (없으면 추가, 있으면 수정)
+        // [ItemPrice] - [Create/Update] 아이템 단가 저장
         public async Task SaveItemPriceAsync(int monsterId, string itemName, long unitPrice)
         {
             using var db = new AppDbContext();
@@ -180,7 +224,7 @@ namespace GersangTracker.Services
             }
         }
 
-        // 세션의 드롭 로그 전체 동기화 (수량 수정 및 신규 추가 저장)
+        // 세션의 드롭 로그 전체 동기화
         public async Task SyncDropLogsAsync(int sessionId, List<PriceItemSummary> items)
         {
             using var db = new AppDbContext();
@@ -188,15 +232,12 @@ namespace GersangTracker.Services
                 .Where(d => d.SessionId == sessionId)
                 .ToListAsync();
 
-            // 1. 현재 화면에 있는 아이템들 처리
             foreach (var item in items)
             {
                 var logsOfItem = existingLogs.Where(l => l.ItemName == item.ItemName).ToList();
 
                 if (logsOfItem.Any())
                 {
-                    // 기존 로그가 있는 경우: 모두 삭제 후 사용자가 수정한 수량으로 통합된 하나의 로그 생성
-                    // (개별 드롭 시간보다는 전체 통계의 정확성이 우선되는 화면이므로 병합 처리)
                     var firstDroppedAt = logsOfItem.OrderBy(l => l.DroppedAt).First().DroppedAt;
                     db.DropLogs.RemoveRange(logsOfItem);
 
@@ -214,7 +255,6 @@ namespace GersangTracker.Services
                 }
                 else
                 {
-                    // 기존 로그가 없는 경우 (수동 추가된 아이템): 신규 생성
                     if (item.TotalQuantity > 0)
                     {
                         db.DropLogs.Add(new DropLog
@@ -229,7 +269,6 @@ namespace GersangTracker.Services
                 }
             }
 
-            // 2. 사용자가 목록에서 삭제한 아이템 처리
             var itemNamesInView = items.Select(i => i.ItemName).ToHashSet();
             var logsToDelete = existingLogs.Where(l => !itemNamesInView.Contains(l.ItemName));
             db.DropLogs.RemoveRange(logsToDelete);
@@ -238,8 +277,6 @@ namespace GersangTracker.Services
         }
     }
 
-
-    // 통계용 모델 (Service 내부)
     public class PriceItemSummary
     {
         public string ItemName { get; set; } = string.Empty;

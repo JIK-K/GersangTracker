@@ -208,9 +208,7 @@
         <!--  TEXTBOX STYLE                                   -->
         <!-- ================================================ -->
         <Style x:Key="ModernTextBox" TargetType="TextBox">
-            <!-- 배경을 조금 더 밝게 변경하여 입력창임을 명확히 함 -->
             <Setter Property="Background"          Value="{StaticResource BackgroundPrimary}"/>
-            <!-- 글자색을 확실한 흰색 계열로 설정 -->
             <Setter Property="Foreground"          Value="{StaticResource TextPrimary}"/>
             <Setter Property="CaretBrush"          Value="{StaticResource TextPrimary}"/>
             <Setter Property="BorderThickness"     Value="1"/>
@@ -227,7 +225,6 @@
                         BorderThickness="{TemplateBinding BorderThickness}"
                         CornerRadius="8"
                         Padding="{TemplateBinding Padding}">
-                            <!-- 텍스트가 표시되는 영역 -->
                             <ScrollViewer x:Name="PART_ContentHost"
                                   Focusable="False"
                                   HorizontalScrollBarVisibility="Hidden"
@@ -239,7 +236,6 @@
                                 <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource TextSecondary}"/>
                             </Trigger>
                             <Trigger Property="IsFocused" Value="True">
-                                <!-- 포커스 시 테두리를 민트색(AccentColor)으로 강조 -->
                                 <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource AccentColor}"/>
                                 <Setter TargetName="border" Property="Background" Value="{StaticResource BackgroundSecondary}"/>
                             </Trigger>
@@ -248,7 +244,6 @@
                 </Setter.Value>
             </Setter>
         </Style>
-
 
         <!-- ================================================ -->
         <!--  SCROLLBAR STYLE                                 -->
@@ -281,6 +276,76 @@
                                     </Thumb>
                                 </Track.Thumb>
                             </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ================================================ -->
+        <!--  TAB CONTROL STYLES                              -->
+        <!-- ================================================ -->
+
+        <!-- 1. 각각의 개별 탭(TabItem)의 디자인 -->
+        <Style x:Key="ChromeTabItemStyle" TargetType="TabItem">
+            <Setter Property="Background" Value="{StaticResource BackgroundTertiary}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextSecondary}"/>
+            <Setter Property="Padding" Value="16,8"/>
+            <Setter Property="Margin" Value="0,0,2,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border x:Name="border"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="8,8,0,0"
+                                Padding="{TemplateBinding Padding}">
+                            <!-- ✅ 이곳이 정답입니다! ContentSource="Header" -->
+                            <ContentPresenter ContentSource="Header" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource BackgroundQuaternary}"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource BackgroundPrimary}"/>
+                                <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+                                <Setter Property="FontWeight" Value="Bold"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 2. 전체 탭 영역(TabControl)의 디자인 -->
+        <Style x:Key="ChromeTabControlStyle" TargetType="TabControl">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="ItemContainerStyle" Value="{StaticResource ChromeTabItemStyle}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabControl">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Border Grid.Row="0" 
+                                    Background="{StaticResource BackgroundSecondary}"
+                                    Padding="16,8,16,0">
+                                <TabPanel x:Name="HeaderPanel"
+                                          IsItemsHost="True"
+                                          KeyboardNavigation.TabIndex="1"
+                                          Panel.ZIndex="1"/>
+                            </Border>
+                            <Border Grid.Row="1"
+                                    Background="{TemplateBinding Background}"
+                                    BorderThickness="0">
+                                <ContentPresenter x:Name="PART_SelectedContentHost"
+                                                  ContentSource="SelectedContent"
+                                                  Margin="10,0"/>
+                            </Border>
                         </Grid>
                     </ControlTemplate>
                 </Setter.Value>

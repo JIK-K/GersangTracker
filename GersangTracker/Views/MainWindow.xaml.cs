@@ -1,4 +1,4 @@
-using GersangTracker.ViewModels;
+﻿using GersangTracker.ViewModels;
 using System.Windows;
 using System.Windows.Input;
 
@@ -10,10 +10,6 @@ namespace GersangTracker.Views
         {
             InitializeComponent();
             DataContext = viewModel;
-            Loaded += async (_, _) =>
-            {
-                await viewModel.LoadMonstersCommand.ExecuteAsync(null);
-            };
         }
 
         private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
