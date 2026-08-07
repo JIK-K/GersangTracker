@@ -41,8 +41,7 @@ namespace GersangTracker.ViewModels
             }
         }
 
-        // 게임 시작 커맨드 (실제 클라이언트 실행)
-        // 게임 시작 커맨드 (초고속 패치 적용 및 Run.exe 완전 우회)
+        // 게임 시작 커맨드 (실제 클라이언트 실행, 초고속 패치 적용 및 Run.exe 완전 우회)
         [RelayCommand]
         private async Task StartGame(ClientTabViewModel tab)
         {
@@ -97,11 +96,11 @@ namespace GersangTracker.ViewModels
                 }
             }
 
-            // 3. 패치가 정상적으로 완료되었다면 Run.exe 대신 gersang.exe를 직접 찾음
-            string gersangExePath = System.IO.Path.Combine(installPath, "gersang.exe");
-            if (!System.IO.File.Exists(gersangExePath))
+            // 3. 패치가 정상적으로 완료되었다면 런처(Run.exe)를 찾음
+            string runExePath = System.IO.Path.Combine(installPath, "Run.exe");
+            if (!System.IO.File.Exists(runExePath))
             {
-                MessageBox.Show("거상 실행 파일(gersang.exe)을 찾을 수 없습니다.", "경로 오류", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show($"해당 경로에 거상 런처(Run.exe)가 존재하지 않습니다.\n설정하신 경로:\n{installPath}", "경로 오류", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -117,19 +116,20 @@ namespace GersangTracker.ViewModels
             try
             {
                 var authService = new GersangAuthService();
+
+                // 🔥 백그라운드 로그인 후 토큰(CmdStr) 획득
                 string cmdStr = await authService.GetGameStartTokenAsync(userId, plainPw);
 
-                // gersang.exe의 파라미터는 "서버타입 CmdStr" 형태를 요구합니다.
-                string serverParam = GameServerHelper.GetGameStartParam(server);
-
+                // 🔥 획득한 토큰을 런처(Run.exe)의 파라미터로 넘겨 관리자 권한으로 실행
                 var processInfo = new System.Diagnostics.ProcessStartInfo
                 {
-                    FileName = gersangExePath,
-                    Arguments = $"{serverParam} {cmdStr}", // 예: "main 448+345+226+10..."
+                    FileName = runExePath,
+                    Arguments = cmdStr,
                     WorkingDirectory = installPath,
                     UseShellExecute = true,
-                    Verb = "runas" // 게임은 반드시 관리자 권한으로 실행
+                    Verb = "runas"
                 };
+
                 System.Diagnostics.Process.Start(processInfo);
             }
             catch (Exception ex)

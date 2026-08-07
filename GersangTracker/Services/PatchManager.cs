@@ -19,11 +19,15 @@ namespace GersangTracker.Services
         {
             try
             {
-                string vsnPath = Path.Combine(installPath, "Online", "Gersang.vsn");
+                string vsnPath = Path.Combine(installPath, "Online", "vsn.dat");
                 if (!File.Exists(vsnPath)) return null;
 
-                string content = File.ReadAllText(vsnPath);
-                if (int.TryParse(content.Trim(), out int version)) return version;
+                byte[] bytes = File.ReadAllBytes(vsnPath);
+                if (bytes.Length >= 4)
+                {
+                    int raw = BitConverter.ToInt32(bytes, 0);
+                    return -(raw + 1); // 거상 방식의 버전 해독
+                }
             }
             catch { }
             return null;
@@ -63,9 +67,10 @@ namespace GersangTracker.Services
                 }
 
                 // 4. 해당 버전 파일 모두 적용 완료 시 버전 숫자 올리기
-                string vsnPath = Path.Combine(installPath, "Online", "Gersang.vsn");
+                string vsnPath = Path.Combine(installPath, "Online", "vsn.dat");
                 Directory.CreateDirectory(Path.GetDirectoryName(vsnPath));
-                File.WriteAllText(vsnPath, ver.ToString());
+                int raw = -(ver + 1);
+                File.WriteAllBytes(vsnPath, BitConverter.GetBytes(raw));
             }
 
             // 패치가 최종 완료되면 임시 폴더 삭제
