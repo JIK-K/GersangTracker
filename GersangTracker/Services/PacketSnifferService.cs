@@ -18,6 +18,11 @@ namespace GersangTracker.Services
         public int Quantity { get; set; }
         public DateTime DroppedAt { get; set; }
     }
+    public class StatusLogEventArgs : EventArgs
+    {
+        public int Pid { get; set; } = -1; // -1이면 전역 메시지
+        public string Message { get; set; } = string.Empty;
+    }
 
     public class PacketSnifferService : IDisposable
     {
@@ -33,7 +38,8 @@ namespace GersangTracker.Services
         private Dictionary<string, HashSet<uint>> _seenSequences = new Dictionary<string, HashSet<uint>>();
 
         public event EventHandler<DroppedItemEventArgs>? ItemDropped;
-        public event Action<string>? StatusLog;
+        //public event Action<string>? StatusLog;
+        public event EventHandler<StatusLogEventArgs>? StatusLog;
 
         public PacketSnifferService(ItemDatabaseService dbService)
         {
@@ -59,7 +65,7 @@ namespace GersangTracker.Services
 
         private void CaptureLoop(CancellationToken token)
         {
-            StatusLog?.Invoke("거상 트래커 준비 중...");
+            StatusLog?.Invoke(this, new StatusLogEventArgs { Message = "거상 트래커 준비 중..." });
 
             bool foundAnyGersang = false;
             while (!foundAnyGersang && !token.IsCancellationRequested)
@@ -68,7 +74,7 @@ namespace GersangTracker.Services
                 if (processes.Length > 0)
                 {
                     foundAnyGersang = true;
-                    StatusLog?.Invoke($"거상 프로세스 감지됨 (현재 {processes.Length}개 실행 중)");
+                    StatusLog?.Invoke(this, new StatusLogEventArgs { Message = $"거상 프로세스 감지됨 (현재 {processes.Length}개 실행 중)" });
                 }
                 else
                 {
@@ -83,7 +89,7 @@ namespace GersangTracker.Services
             var devices = CaptureDeviceList.Instance;
             if (devices.Count < 1)
             {
-                StatusLog?.Invoke("오류: Npcap 디바이스를 찾을 수 없습니다.");
+                StatusLog?.Invoke(this, new StatusLogEventArgs { Message = "오류: Npcap 디바이스를 찾을 수 없습니다." });
                 return;
             }
 
@@ -98,7 +104,7 @@ namespace GersangTracker.Services
                 catch { }
             }
 
-            StatusLog?.Invoke("[준비 완료]");
+            StatusLog?.Invoke(this, new StatusLogEventArgs { Message = "[준비 완료]" });
 
             while (!token.IsCancellationRequested)
             {
@@ -176,7 +182,7 @@ namespace GersangTracker.Services
                             {
                                 _portToPid[kvp.Key] = kvp.Value;
                                 _gersangPorts.Add(kvp.Key);
-                                StatusLog?.Invoke($"거상 통신 포트 감지: {kvp.Key} (PID: {kvp.Value})");
+                                StatusLog?.Invoke(this, new StatusLogEventArgs { Message = $"거상 통신 포트 감지: {kvp.Key} (PID: {kvp.Value})" });
                             }
                         }
                     }
@@ -346,7 +352,11 @@ namespace GersangTracker.Services
                                 DroppedAt = DateTime.Now
                             });
 
-                            StatusLog?.Invoke($"[아이템 획득] {itemName} {qty}개를 획득했습니다! (PID: {targetPid})");
+                            StatusLog?.Invoke(this, new StatusLogEventArgs
+                            {
+                                Pid = targetPid,
+                                Message = $"[아이템 획득] {itemName} {qty}개를 획득했습니다!"
+                            });
                         }
                     }
                 }

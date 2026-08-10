@@ -64,9 +64,12 @@ namespace GersangTracker.ViewModels
 
             // PacketSnifferService 이벤트 구독
             _snifferService.ItemDropped += OnItemDropped;
-            _snifferService.StatusLog += (message) =>
+            _snifferService.StatusLog += (s, e) =>
             {
-                AddStatusLog(message);
+                // 전역 메시지(-1)이거나 현재 추적 중인 PID(_targetPid)와 일치할 때만 로그 추가
+                if (e.Pid != -1 && e.Pid != _targetPid) return;
+
+                AddStatusLog(e.Message);
             };
 
             // DispatcherTimer 설정 (1초마다 경과시간 갱신 및 PID 폴링)
@@ -94,7 +97,7 @@ namespace GersangTracker.ViewModels
                     string? pPath = p.MainModule?.FileName?.Replace("/", "\\");
                     if (string.Equals(pPath, expectedExePath, StringComparison.OrdinalIgnoreCase))
                     {
-                        isMatch = true; 
+                        isMatch = true;
                     }
                 }
                 catch
