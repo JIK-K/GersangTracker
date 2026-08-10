@@ -1,6 +1,6 @@
 [Setup]
 AppName=GersangTracker
-AppVersion=2.2.1
+AppVersion=2.2.2
 AppPublisher=JIK
 DefaultDirName={autopf}\GersangTracker
 DefaultGroupName=GersangTracker
