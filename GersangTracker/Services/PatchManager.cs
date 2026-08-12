@@ -48,22 +48,48 @@ namespace GersangTracker.Services
                 Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
                 string infoText = Encoding.GetEncoding(949).GetString(infoBytes);
 
-                var patchFiles = infoText.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
-                    .Where(x => x.EndsWith(".gsz", StringComparison.OrdinalIgnoreCase))
-                    .ToList();
+                // info 파일을 줄 단위로 분리
+                var lines = infoText.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
 
-                foreach (var patchFile in patchFiles)
+                foreach (var line in lines)
                 {
-                    // 서버 주소가 절대 경로 슬래시(/)로 오므로 안전하게 파일명만 추출해서 템프에 저장
-                    string fileUrl = GameServerHelper.GetPatchFileUrl(server, patchFile.TrimStart('/'));
-                    string safeFileName = Path.GetFileName(patchFile);
-                    string localZipPath = Path.Combine(tempDir, safeFileName);
+                    // 주석으로 시작하는 줄은 패스
+                    if (line.StartsWith(";") || line.StartsWith("#")) continue;
+
+                    // TSV 형식에 맞춰 탭(\t)으로 컬럼 분리
+                    var cols = line.Split('\t');
+                    
+                    // 인덱스가 초과되는 에러 방지를 위해 최소한 RelativeDir이 있는 4번째 컬럼까지 존재하는지 확인
+                    if (cols.Length < 4) continue;
+
+                    string zipFileName = cols[1];
+                    string relativeDir = cols[3];
+
+                    // .gsz 파일이 아니면 무시
+                    if (!zipFileName.EndsWith(".gsz", StringComparison.OrdinalIgnoreCase))
+                        continue;
+
+                    // 백슬래시(\)를 슬래시(/)로 정규화하고 경로 앞뒤의 불필요한 슬래시 제거
+                    string relativeDirNormalized = relativeDir.Replace('\\', '/').Trim('/');
+                    
+                    // URL에 추가될 경로 조합
+                    string relativeArchiveUrlPath = string.IsNullOrEmpty(relativeDirNormalized) 
+                        ? zipFileName 
+                        : $"{relativeDirNormalized}/{zipFileName}";
 
                     // 2. 패치 압축 파일 다운로드 (.gsz)
+                    string fileUrl = GameServerHelper.GetPatchFileUrl(server, relativeArchiveUrlPath);
+                    string safeFileName = Path.GetFileName(zipFileName);
+                    string localZipPath = Path.Combine(tempDir, safeFileName);
+
                     await _downloader.DownloadFileAsync(fileUrl, localZipPath, downloadProgress, ct);
 
-                    // 3. 거상 원본 폴더에 그대로 압축 해제 덮어쓰기
-                    await _extractor.ExtractAsync(localZipPath, installPath, extractProgress, ct);
+                    // 3. 거상 원본 폴더의 "올바른 하위 경로"에 압축 해제 덮어쓰기
+                    string extractDestPath = string.IsNullOrEmpty(relativeDirNormalized)
+                        ? installPath
+                        : Path.Combine(installPath, relativeDirNormalized.Replace('/', Path.DirectorySeparatorChar));
+
+                    await _extractor.ExtractAsync(localZipPath, extractDestPath, extractProgress, ct);
                 }
 
                 // 4. 해당 버전 파일 모두 적용 완료 시 버전 숫자 올리기
